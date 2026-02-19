@@ -82,6 +82,13 @@ Captures the non-physical, often overlooked factors that influence long-term fin
 - **Financial literacy score** (self-assessed knowledge & goals)
 - **Health & wellbeing index** (lifestyle factors that affect future costs)
 
+### 7. Signing Up
+
+Setting Up the account, or creating a new account for a new user. 
+
+- **Login in with email address** (Adding Username and password)
+- **Seperate Sign Up Page** (Having a seperate place for new users to create their accounts)
+
 ---
 
 ## How Each Page Works
@@ -127,16 +134,53 @@ Captures the non-physical, often overlooked factors that influence long-term fin
 - A **radar/spider chart** (drawn with Canvas or SVG) visualises scores across all intangible categories.
 - Summary card shows an overall "intangible wealth" score as a weighted average.
 
+### 7. Sign Up & Login — Mechanisms
+
+#### Sign Up (`signup.html`)
+
+- **Registration form** with fields: email address, username, password, and confirm password.
+- **Client-side validation** checks email format (regex), password strength (minimum 8 characters, mixed case, numbers), and that both password fields match.
+- **Password hashing** uses the Web Crypto API (`crypto.subtle.digest`) to hash passwords before storing — plaintext passwords are never saved.
+- **Duplicate check** — on submission, JavaScript checks `localStorage` for an existing account with the same email to prevent duplicate registrations.
+- **User storage** — a `users` array is maintained in `localStorage`, each entry containing `{ email, username, hashedPassword, createdAt }`.
+- **Success flow** — after successful registration the user is automatically logged in and redirected to the dashboard (`index.html`).
+
+#### Login (`login.html`)
+
+- **Login form** with email and password fields.
+- **Credential verification** — the entered password is hashed and compared against the stored hash for the matching email.
+- **Session flag** — on successful login, `sessionStorage.currentUser` is set to the user's email so the app knows who is logged in.
+- **Error handling** — inline error messages are displayed for incorrect email or password.
+- **Logout** — a logout button in the shared `<nav>` clears `sessionStorage.currentUser` and redirects to `login.html`.
+
+#### Auth Guard (all protected pages)
+
+- Every sub-page includes `auth-guard.js` which checks for a valid session; if `sessionStorage.currentUser` is not set, the user is redirected to `login.html`.
+
+#### User-Scoped Data (impact on all sub-pages)
+
+- All `localStorage` keys are **prefixed with the current user's email** so each user's data is isolated.
+- `saveData()` and `loadData()` in `main.js` are updated to use a helper `getUserKey(key)` that returns `${currentUser}_${key}`.
+- This means Income & Tax, Assets, Liabilities, Protection, Estate, and Intangibles data are all stored per-user and never mixed between accounts.
+
+#### Nav Bar Updates
+
+- The shared `<nav>` displays the **logged-in username** and a **Logout** link when authenticated.
+- **Sign Up** and **Login** links are hidden when the user is already logged in.
+- The **Dashboard** greeting is personalised: *"Welcome back, [username]"*.
+
 ### Cross-Page Mechanisms
 
 | Mechanism | How It Works |
 |---|---|
-| **Data persistence** | All user data saved to `localStorage` as JSON objects, keyed per page. |
+| **Data persistence** | All user data saved to `localStorage` as JSON objects, keyed per page and **scoped per user** (e.g. `user@email.com_assets`). |
 | **Navigation** | Shared `<nav>` bar across all pages links to each sub-page and the dashboard. |
 | **Dashboard (index.html)** | Pulls totals from each page's `localStorage` data and renders a unified financial snapshot — net worth (assets − liabilities), income summary, protection status. |
-| **Shared JS (`main.js`)** | Contains reusable functions: `saveData()`, `loadData()`, `formatCurrency()`, `calculateTotal()`, nav highlighting, form validation. |
+| **Shared JS (`main.js`)** | Contains reusable functions: `saveData()`, `loadData()`, `getUserKey()`, `formatCurrency()`, `calculateTotal()`, nav highlighting, form validation. |
 | **Responsive layout** | CSS media queries ensure all forms, tables, and charts adapt to mobile/tablet/desktop. |
 | **Form validation** | JavaScript validates required fields, numeric inputs, and date formats before saving. |
+| **Authentication** | `auth.js` handles sign-up, login, password hashing, and logout. `auth-guard.js` protects all sub-pages by redirecting unauthenticated users to `login.html`. |
+| **Session management** | Current user stored in `sessionStorage` (clears when the browser tab is closed), ensuring users must log in each session. |
 
 ---
 
@@ -152,7 +196,9 @@ Captures the non-physical, often overlooked factors that influence long-term fin
 
 ```
 Web_Assigment/
-├── index.html              # Landing / dashboard page
+├── index.html              # Landing / dashboard page (auth-guarded)
+├── login.html              # Login page
+├── signup.html             # Sign-up page
 ├── income-tax.html         # 1. Income & Tax
 ├── assets.html             # 2. Assets
 ├── liabilities.html        # 3. Liabilities
@@ -162,7 +208,9 @@ Web_Assigment/
 ├── css/
 │   └── style.css           # Global stylesheet
 ├── js/
-│   └── main.js             # Shared scripts
+│   ├── main.js             # Shared scripts (user-scoped save/load)
+│   ├── auth.js             # Sign-up, login, logout & password hashing
+│   └── auth-guard.js       # Redirects unauthenticated users to login
 └── README.md
 ```
 
