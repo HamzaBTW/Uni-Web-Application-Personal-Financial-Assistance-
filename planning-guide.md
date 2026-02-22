@@ -22,73 +22,6 @@ Write a brief paragraph introducing your team, the application, and its purpose.
 
 ## Step 2: Database Diagram (ER Diagram)
 
-Draw a diagram with **7 tables** linked by `user_id` foreign keys. You can use:
-
-- **draw.io** (free, exports to PNG) — [app.diagrams.net](https://app.diagrams.net)
-- **dbdiagram.io** — paste DBML code and it generates the diagram
-- **Mermaid** — if your report is in Markdown
-
-### Schema Overview
-
-```
-users
-├── id          INTEGER PRIMARY KEY AUTOINCREMENT
-├── email       TEXT UNIQUE NOT NULL
-├── username    TEXT NOT NULL
-├── password_hash TEXT NOT NULL
-└── created_at  TEXT DEFAULT CURRENT_TIMESTAMP
-
-income (FK: user_id → users.id)
-├── id          INTEGER PRIMARY KEY AUTOINCREMENT
-├── user_id     INTEGER NOT NULL
-├── source_type TEXT        -- 'employment', 'freelance', 'investment', 'rental'
-├── description TEXT
-├── amount      REAL NOT NULL
-├── frequency   TEXT        -- 'weekly', 'monthly', 'annual'
-└── tax_band    TEXT
-
-assets (FK: user_id → users.id)
-├── id          INTEGER PRIMARY KEY AUTOINCREMENT
-├── user_id     INTEGER NOT NULL
-├── category    TEXT        -- 'cash', 'investments', 'property', 'vehicles', 'valuables'
-├── description TEXT
-└── value       REAL NOT NULL
-
-liabilities (FK: user_id → users.id)
-├── id          INTEGER PRIMARY KEY AUTOINCREMENT
-├── user_id     INTEGER NOT NULL
-├── category    TEXT        -- 'mortgage', 'student_loan', 'credit_card', 'personal_loan', 'overdraft'
-├── description TEXT
-├── balance     REAL NOT NULL
-└── interest_rate REAL
-
-protection (FK: user_id → users.id)
-├── id          INTEGER PRIMARY KEY AUTOINCREMENT
-├── user_id     INTEGER NOT NULL
-├── policy_type TEXT        -- 'life', 'health', 'home', 'vehicle', 'income_protection'
-├── provider    TEXT
-├── premium     REAL
-├── start_date  TEXT
-└── renewal_date TEXT
-
-estate (FK: user_id → users.id)
-├── id          INTEGER PRIMARY KEY AUTOINCREMENT
-├── user_id     INTEGER NOT NULL
-├── item_type   TEXT        -- 'will', 'power_of_attorney', 'trust', 'beneficiary'
-├── status      TEXT        -- 'complete', 'incomplete', 'in_progress'
-├── details     TEXT
-└── contact_info TEXT
-
-intangibles (FK: user_id → users.id)
-├── id          INTEGER PRIMARY KEY AUTOINCREMENT
-├── user_id     INTEGER NOT NULL
-├── category    TEXT        -- 'skills', 'network', 'ip', 'brand', 'financial_literacy', 'health'
-├── score       INTEGER     -- 1-10
-└── description TEXT
-```
-
-### DBML (paste into dbdiagram.io)
-
 ```dbml
 Table users {
   id integer [pk, increment]
@@ -153,11 +86,6 @@ Table intangibles {
 }
 ```
 
-### How to generate the diagram
-
-1. Go to [dbdiagram.io](https://dbdiagram.io)
-2. Paste the DBML code above
-3. Screenshot the result → put it in your report
 
 ---
 
@@ -174,7 +102,7 @@ Build **3–4 static HTML pages** with CSS styling — no JS logic needed, just 
 
 ### How to do it
 
-1. Create a `prototypes/` folder
+1. Create a seperate branch called `prototypes/`.
 2. Build each as a standalone `.html` file with inline or linked CSS
 3. Focus on **layout and visual design**, not functionality
 4. Screenshot them for your report, or submit the HTML files directly
@@ -344,7 +272,7 @@ SELECT id, username, password_hash FROM users WHERE email = ?;
 SELECT COUNT(*) FROM users WHERE email = ?;
 ```
 
-### CRUD Queries (example: assets — same pattern for all 6 tables)
+### CRUD (Create, Read, Update, Delete) Queries (example: assets — same pattern for all 6 tables)
 
 ```sql
 -- List all assets for a user
