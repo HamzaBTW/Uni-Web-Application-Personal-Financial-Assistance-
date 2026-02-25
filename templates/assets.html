@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Advisr — Assets</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #b0b8d0;
+    min-height: 100vh;
+    font-family: sans-serif;
+    display: flex;
+  }
+
+  /* ─── SIDEBAR (shared with dashboard) ─── */
+  .sidebar {
+    width: 220px;
+    background: #1e2230;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding: 24px 16px;
+    gap: 28px;
+    flex-shrink: 0;
+  }
+  .sb-brand { display: flex; align-items: center; gap: 10px; }
+  .sb-logo  { width: 36px; height: 36px; border-radius: 50%; background: #3a4260; }
+  .sb-name  { width: 72px; height: 14px; background: #3a4260; border-radius: 4px; }
+
+  .sb-menu { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+  .sb-item {
+    height: 36px; border-radius: 7px;
+    display: flex; align-items: center;
+    gap: 10px; padding: 0 12px; cursor: pointer;
+  }
+  .sb-item.active { background: #2e364e; }
+  .sb-icon { width: 18px; height: 18px; border-radius: 4px; background: #3a4260; flex-shrink: 0; }
+  .sb-item.active .sb-icon { background: #5a8ac0; }
+  .sb-label { width: 64px; height: 10px; background: #2e364e; border-radius: 3px; }
+  .sb-item.active .sb-label { background: #8e97b0; }
+
+  .sb-user {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 0 0; border-top: 1px solid #2e364e;
+  }
+  .sb-avatar { width: 32px; height: 32px; border-radius: 50%; background: #3a4260; }
+  .sb-uinfo { display: flex; flex-direction: column; gap: 4px; }
+  .sb-uname { width: 72px; height: 10px; background: #3a4260; border-radius: 3px; }
+  .sb-uemail { width: 92px; height: 8px; background: #2e364e; border-radius: 3px; }
+
+  /* ─── MAIN ─── */
+  .main {
+    flex: 1; display: flex; flex-direction: column; min-height: 100vh;
+  }
+
+  /* top bar */
+  .topbar {
+    height: 56px; background: #c4c8d4;
+    display: flex; align-items: center;
+    padding: 0 28px; gap: 14px; flex-shrink: 0;
+  }
+  .tb-title  { width: 80px; height: 16px; background: #9aa2b8; border-radius: 4px; }
+  .tb-spacer { flex: 1; }
+  .tb-search {
+    width: 200px; height: 32px;
+    background: #d8dce8; border-radius: 6px; border: 2px solid #b0b8cc;
+  }
+  .tb-bell   { width: 28px; height: 28px; border-radius: 50%; background: #9aa2b8; }
+  .tb-avatar { width: 32px; height: 32px; border-radius: 50%; background: #8e97b0; }
+
+  /* content */
+  .content {
+    flex: 1; padding: 28px;
+    display: flex; flex-direction: column; gap: 24px;
+    overflow-y: auto;
+  }
+
+  /* page heading row */
+  .page-head {
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .page-head-left { display: flex; flex-direction: column; gap: 5px; }
+  .ph-title { width: 120px; height: 18px; background: #8e97b0; border-radius: 4px; }
+  .ph-sub   { width: 200px; height: 10px; background: #a0a8bf; border-radius: 3px; }
+  .ph-btn {
+    width: 120px; height: 36px; background: #5a8ac0;
+    border-radius: 7px; display: flex; align-items: center;
+    justify-content: center; gap: 8px; cursor: pointer;
+  }
+  .ph-btn-icon { width: 14px; height: 14px; border-radius: 50%; background: rgba(255,255,255,.35); }
+  .ph-btn-text { width: 56px; height: 10px; background: rgba(255,255,255,.35); border-radius: 3px; }
+
+  /* ─── ADD / EDIT FORM CARD ─── */
+  .form-card {
+    background: #d8dce8;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 3px 12px rgba(0,0,0,.12);
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .form-title { width: 130px; height: 14px; background: #8e97b0; border-radius: 4px; }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+  }
+  .form-field {
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .ff-label { height: 10px; background: #a0a8bf; border-radius: 3px; }
+  .ff-input {
+    height: 40px; background: #c4c8d4;
+    border-radius: 7px; border: 2px solid #b0b8cc;
+  }
+  .ff-select {
+    height: 40px; background: #c4c8d4;
+    border-radius: 7px; border: 2px solid #b0b8cc;
+    position: relative;
+  }
+  .ff-select::after {
+    content: '';
+    position: absolute; right: 12px; top: 50%;
+    transform: translateY(-50%);
+    width: 0; height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 6px solid #8e97b0;
+  }
+
+  /* full-width field spanning all 3 cols */
+  .form-field.full { grid-column: 1 / -1; }
+
+  .form-actions {
+    display: flex; gap: 10px; justify-content: flex-end;
+  }
+  .fa-btn {
+    height: 36px; border-radius: 7px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+  }
+  .fa-save {
+    width: 100px; background: #5a8ac0;
+  }
+  .fa-cancel {
+    width: 84px; background: #c4c8d4; border: 2px solid #b0b8cc;
+  }
+  .fa-label { height: 10px; border-radius: 3px; }
+  .fa-save .fa-label  { width: 48px; background: rgba(255,255,255,.35); }
+  .fa-cancel .fa-label { width: 40px; background: #9aa2b8; }
+
+  /* ─── FILTER / SEARCH BAR ─── */
+  .filter-bar {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  }
+  .fb-search {
+    flex: 1; min-width: 180px; height: 36px;
+    background: #d8dce8; border-radius: 7px; border: 2px solid #b0b8cc;
+  }
+  .fb-pill {
+    height: 32px; padding: 0 14px;
+    background: #d8dce8; border-radius: 16px;
+    border: 2px solid #b0b8cc;
+    display: flex; align-items: center; gap: 6px;
+    cursor: pointer;
+  }
+  .fb-pill-label { width: 44px; height: 9px; background: #b0b8cc; border-radius: 3px; }
+  .fb-pill-arrow {
+    width: 0; height: 0;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 5px solid #9aa2b8;
+  }
+
+  /* ─── DATA TABLE ─── */
+  .table-card {
+    background: #d8dce8;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 3px 12px rgba(0,0,0,.12);
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .tbl {
+    width: 100%; border-collapse: collapse;
+  }
+  .tbl th, .tbl td {
+    text-align: left; padding: 12px 14px;
+  }
+  .tbl thead { border-bottom: 2px solid #b0b8cc; }
+  .th-cell { height: 10px; background: #8e97b0; border-radius: 3px; display: inline-block; }
+  .td-cell { height: 10px; background: #b0b8cc; border-radius: 3px; display: inline-block; }
+  .tbl tbody tr { border-bottom: 1px solid #c4c8d4; }
+  .tbl tbody tr:last-child { border-bottom: none; }
+
+  /* type badge */
+  .td-badge {
+    display: inline-block; height: 20px;
+    padding: 0 10px; border-radius: 10px;
+    line-height: 20px;
+  }
+  .badge-prop  { background: rgba(90,138,192,.25); }
+  .badge-cash  { background: rgba(106,168,122,.25); }
+  .badge-stock { background: rgba(208,176,64,.25); }
+  .badge-other { background: rgba(160,168,191,.25); }
+
+  /* action dots */
+  .td-actions {
+    display: flex; gap: 8px; align-items: center;
+  }
+  .act-btn {
+    width: 28px; height: 28px; border-radius: 6px;
+    cursor: pointer; display: flex;
+    align-items: center; justify-content: center;
+  }
+  .act-edit { background: rgba(90,138,192,.2); }
+  .act-del  { background: rgba(192,88,88,.2); }
+  .act-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+  }
+  .act-edit .act-dot { background: #5a8ac0; }
+  .act-del  .act-dot { background: #c05858; }
+
+  /* pagination */
+  .pagination {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 14px 4px;
+  }
+  .pg-info { width: 120px; height: 9px; background: #b0b8cc; border-radius: 3px; }
+  .pg-buttons { display: flex; gap: 6px; }
+  .pg-btn {
+    width: 30px; height: 30px; border-radius: 6px;
+    background: #c4c8d4; cursor: pointer;
+  }
+  .pg-btn.active { background: #5a8ac0; }
+
+  /* ─── RESPONSIVE ─── */
+  @media (max-width: 1024px) {
+    .form-grid { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 720px) {
+    .sidebar { display: none; }
+    .form-grid { grid-template-columns: 1fr; }
+    .topbar { padding: 0 16px; }
+    .tb-search { width: 140px; min-width: 0; }
+    .content { padding: 20px 16px; gap: 18px; }
+    .table-card { padding: 14px; overflow-x: auto; }
+    .tbl { min-width: 560px; font-size: 13px; }
+    .page-head { flex-direction: column; align-items: flex-start; gap: 12px; }
+    .filter-bar { gap: 8px; }
+    .fb-search { min-width: 120px; }
+  }
+  @media (max-width: 480px) {
+    .topbar { gap: 8px; }
+    .tb-search { display: none; }
+    .content { padding: 16px 10px; gap: 14px; }
+    .form-card { padding: 16px; gap: 14px; }
+    .ff-input, .ff-select { height: 36px; }
+    .ph-btn { width: 100%; justify-content: center; }
+    .pagination { flex-direction: column; gap: 10px; align-items: center; }
+    .table-card { padding: 10px; }
+  }
+  @media (max-width: 360px) {
+    .content { padding: 12px 8px; gap: 12px; }
+    .form-card { padding: 12px; }
+    .fb-pill { padding: 0 10px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sb-brand">
+    <div class="sb-logo"></div>
+    <div class="sb-name"></div>
+  </div>
+  <div class="sb-menu">
+    <div class="sb-item"><div class="sb-icon"></div><div class="sb-label" style="width:70px"></div></div>
+    <div class="sb-item"><div class="sb-icon"></div><div class="sb-label" style="width:52px"></div></div>
+    <div class="sb-item active"><div class="sb-icon"></div><div class="sb-label" style="width:50px"></div></div>
+    <div class="sb-item"><div class="sb-icon"></div><div class="sb-label" style="width:68px"></div></div>
+    <div class="sb-item"><div class="sb-icon"></div><div class="sb-label" style="width:56px"></div></div>
+    <div class="sb-item"><div class="sb-icon"></div><div class="sb-label" style="width:48px"></div></div>
+  </div>
+  <div class="sb-user">
+    <div class="sb-avatar"></div>
+    <div class="sb-uinfo">
+      <div class="sb-uname"></div>
+      <div class="sb-uemail"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="tb-title"></div>
+    <div class="tb-spacer"></div>
+    <div class="tb-search"></div>
+    <div class="tb-bell"></div>
+    <div class="tb-avatar"></div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- Page heading -->
+    <div class="page-head">
+      <div class="page-head-left">
+        <div class="ph-title"></div>
+        <div class="ph-sub"></div>
+      </div>
+      <div class="ph-btn">
+        <div class="ph-btn-icon"></div>
+        <div class="ph-btn-text"></div>
+      </div>
+    </div>
+
+    <!-- Add / Edit Form -->
+    <div class="form-card">
+      <div class="form-title"></div>
+      <div class="form-grid">
+
+        <!-- Asset Name -->
+        <div class="form-field">
+          <div class="ff-label" style="width:72px"></div>
+          <div class="ff-input"></div>
+        </div>
+
+        <!-- Asset Type (dropdown) -->
+        <div class="form-field">
+          <div class="ff-label" style="width:64px"></div>
+          <div class="ff-select"></div>
+        </div>
+
+        <!-- Value -->
+        <div class="form-field">
+          <div class="ff-label" style="width:44px"></div>
+          <div class="ff-input"></div>
+        </div>
+
+        <!-- Purchase Date -->
+        <div class="form-field">
+          <div class="ff-label" style="width:88px"></div>
+          <div class="ff-input"></div>
+        </div>
+
+        <!-- Location / Account -->
+        <div class="form-field">
+          <div class="ff-label" style="width:96px"></div>
+          <div class="ff-input"></div>
+        </div>
+
+        <!-- Currency -->
+        <div class="form-field">
+          <div class="ff-label" style="width:56px"></div>
+          <div class="ff-select"></div>
+        </div>
+
+        <!-- Notes (full width) -->
+        <div class="form-field full">
+          <div class="ff-label" style="width:40px"></div>
+          <div class="ff-input" style="height:64px"></div>
+        </div>
+
+      </div>
+
+      <!-- Form actions -->
+      <div class="form-actions">
+        <div class="fa-btn fa-cancel"><div class="fa-label"></div></div>
+        <div class="fa-btn fa-save"><div class="fa-label"></div></div>
+      </div>
+    </div>
+
+    <!-- Filter bar -->
+    <div class="filter-bar">
+      <div class="fb-search"></div>
+      <div class="fb-pill">
+        <div class="fb-pill-label"></div>
+        <div class="fb-pill-arrow"></div>
+      </div>
+      <div class="fb-pill">
+        <div class="fb-pill-label" style="width:36px"></div>
+        <div class="fb-pill-arrow"></div>
+      </div>
+      <div class="fb-pill">
+        <div class="fb-pill-label" style="width:50px"></div>
+        <div class="fb-pill-arrow"></div>
+      </div>
+    </div>
+
+    <!-- Assets Table -->
+    <div class="table-card">
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th><div class="th-cell" style="width:50px"></div></th>
+            <th><div class="th-cell" style="width:72px"></div></th>
+            <th><div class="th-cell" style="width:42px"></div></th>
+            <th><div class="th-cell" style="width:50px"></div></th>
+            <th><div class="th-cell" style="width:76px"></div></th>
+            <th><div class="th-cell" style="width:56px"></div></th>
+            <th><div class="th-cell" style="width:52px"></div></th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Row 1 -->
+          <tr>
+            <td><div class="td-cell" style="width:36px"></div></td>
+            <td><div class="td-cell" style="width:80px"></div></td>
+            <td><div class="td-badge badge-prop"><div class="td-cell" style="width:44px; background:rgba(90,138,192,.45)"></div></div></td>
+            <td><div class="td-cell" style="width:56px"></div></td>
+            <td><div class="td-cell" style="width:64px"></div></td>
+            <td><div class="td-cell" style="width:50px"></div></td>
+            <td>
+              <div class="td-actions">
+                <div class="act-btn act-edit"><div class="act-dot"></div></div>
+                <div class="act-btn act-del"><div class="act-dot"></div></div>
+              </div>
+            </td>
+          </tr>
+          <!-- Row 2 -->
+          <tr>
+            <td><div class="td-cell" style="width:32px"></div></td>
+            <td><div class="td-cell" style="width:72px"></div></td>
+            <td><div class="td-badge badge-cash"><div class="td-cell" style="width:36px; background:rgba(106,168,122,.45)"></div></div></td>
+            <td><div class="td-cell" style="width:48px"></div></td>
+            <td><div class="td-cell" style="width:58px"></div></td>
+            <td><div class="td-cell" style="width:50px"></div></td>
+            <td>
+              <div class="td-actions">
+                <div class="act-btn act-edit"><div class="act-dot"></div></div>
+                <div class="act-btn act-del"><div class="act-dot"></div></div>
+              </div>
+            </td>
+          </tr>
+          <!-- Row 3 -->
+          <tr>
+            <td><div class="td-cell" style="width:34px"></div></td>
+            <td><div class="td-cell" style="width:86px"></div></td>
+            <td><div class="td-badge badge-stock"><div class="td-cell" style="width:40px; background:rgba(208,176,64,.45)"></div></div></td>
+            <td><div class="td-cell" style="width:52px"></div></td>
+            <td><div class="td-cell" style="width:60px"></div></td>
+            <td><div class="td-cell" style="width:50px"></div></td>
+            <td>
+              <div class="td-actions">
+                <div class="act-btn act-edit"><div class="act-dot"></div></div>
+                <div class="act-btn act-del"><div class="act-dot"></div></div>
+              </div>
+            </td>
+          </tr>
+          <!-- Row 4 -->
+          <tr>
+            <td><div class="td-cell" style="width:30px"></div></td>
+            <td><div class="td-cell" style="width:68px"></div></td>
+            <td><div class="td-badge badge-prop"><div class="td-cell" style="width:44px; background:rgba(90,138,192,.45)"></div></div></td>
+            <td><div class="td-cell" style="width:50px"></div></td>
+            <td><div class="td-cell" style="width:62px"></div></td>
+            <td><div class="td-cell" style="width:50px"></div></td>
+            <td>
+              <div class="td-actions">
+                <div class="act-btn act-edit"><div class="act-dot"></div></div>
+                <div class="act-btn act-del"><div class="act-dot"></div></div>
+              </div>
+            </td>
+          </tr>
+          <!-- Row 5 -->
+          <tr>
+            <td><div class="td-cell" style="width:38px"></div></td>
+            <td><div class="td-cell" style="width:78px"></div></td>
+            <td><div class="td-badge badge-other"><div class="td-cell" style="width:38px; background:rgba(160,168,191,.45)"></div></div></td>
+            <td><div class="td-cell" style="width:46px"></div></td>
+            <td><div class="td-cell" style="width:66px"></div></td>
+            <td><div class="td-cell" style="width:50px"></div></td>
+            <td>
+              <div class="td-actions">
+                <div class="act-btn act-edit"><div class="act-dot"></div></div>
+                <div class="act-btn act-del"><div class="act-dot"></div></div>
+              </div>
+            </td>
+          </tr>
+          <!-- Row 6 -->
+          <tr>
+            <td><div class="td-cell" style="width:34px"></div></td>
+            <td><div class="td-cell" style="width:74px"></div></td>
+            <td><div class="td-badge badge-stock"><div class="td-cell" style="width:40px; background:rgba(208,176,64,.45)"></div></div></td>
+            <td><div class="td-cell" style="width:54px"></div></td>
+            <td><div class="td-cell" style="width:58px"></div></td>
+            <td><div class="td-cell" style="width:50px"></div></td>
+            <td>
+              <div class="td-actions">
+                <div class="act-btn act-edit"><div class="act-dot"></div></div>
+                <div class="act-btn act-del"><div class="act-dot"></div></div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Pagination -->
+      <div class="pagination">
+        <div class="pg-info"></div>
+        <div class="pg-buttons">
+          <div class="pg-btn"></div>
+          <div class="pg-btn active"></div>
+          <div class="pg-btn"></div>
+          <div class="pg-btn"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

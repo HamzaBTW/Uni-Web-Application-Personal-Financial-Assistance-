@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Advisr — Dashboard</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #b0b8d0;
+    min-height: 100vh;
+    font-family: sans-serif;
+    display: flex;
+  }
+
+  /* ─── SIDEBAR ─── */
+  .sidebar {
+    width: 220px;
+    background: #1e2230;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding: 24px 16px;
+    gap: 28px;
+    flex-shrink: 0;
+  }
+  .sb-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .sb-logo { width: 36px; height: 36px; border-radius: 50%; background: #3a4260; }
+  .sb-name { width: 72px; height: 14px; background: #3a4260; border-radius: 4px; }
+
+  .sb-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+  }
+  .sb-item {
+    height: 36px;
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 12px;
+    cursor: pointer;
+  }
+  .sb-item.active { background: #2e364e; }
+  .sb-icon { width: 18px; height: 18px; border-radius: 4px; background: #3a4260; flex-shrink: 0; }
+  .sb-item.active .sb-icon { background: #8e97b0; }
+  .sb-label { width: 64px; height: 10px; background: #2e364e; border-radius: 3px; }
+  .sb-item.active .sb-label { background: #8e97b0; }
+
+  .sb-user {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0 0;
+    border-top: 1px solid #2e364e;
+  }
+  .sb-avatar { width: 32px; height: 32px; border-radius: 50%; background: #3a4260; }
+  .sb-uinfo { display: flex; flex-direction: column; gap: 4px; }
+  .sb-uname { width: 72px; height: 10px; background: #3a4260; border-radius: 3px; }
+  .sb-uemail { width: 92px; height: 8px; background: #2e364e; border-radius: 3px; }
+
+  /* ─── MAIN ─── */
+  .main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+  }
+
+  /* top bar */
+  .topbar {
+    height: 56px;
+    background: #c4c8d4;
+    display: flex;
+    align-items: center;
+    padding: 0 28px;
+    gap: 14px;
+    flex-shrink: 0;
+  }
+  .tb-title { width: 110px; height: 16px; background: #9aa2b8; border-radius: 4px; }
+  .tb-spacer { flex: 1; }
+  .tb-search {
+    width: 200px; height: 32px;
+    background: #d8dce8; border-radius: 6px;
+    border: 2px solid #b0b8cc;
+  }
+  .tb-bell { width: 28px; height: 28px; border-radius: 50%; background: #9aa2b8; }
+  .tb-avatar { width: 32px; height: 32px; border-radius: 50%; background: #8e97b0; }
+
+  /* content area */
+  .content {
+    flex: 1;
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    overflow-y: auto;
+  }
+
+  /* greeting row */
+  .greeting {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .gr-line { height: 18px; background: #8e97b0; border-radius: 4px; }
+  .gr-sub  { height: 10px; background: #a0a8bf; border-radius: 3px; }
+
+  /* ─── SUMMARY CARDS ─── */
+  .cards-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+  .card {
+    background: #d8dce8;
+    border-radius: 12px;
+    padding: 20px 18px;
+    box-shadow: 0 3px 12px rgba(0,0,0,.12);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .card-label { height: 10px; background: #a0a8bf; border-radius: 3px; }
+  .card-icon { width: 32px; height: 32px; border-radius: 8px; background: #c4c8d4; }
+  .card-value { height: 24px; background: #8e97b0; border-radius: 5px; width: 70%; }
+  .card-change {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .card-arrow { width: 14px; height: 14px; border-radius: 50%; }
+  .arrow-up { background: #6aa87a; }
+  .arrow-down { background: #c05858; }
+  .card-pct { width: 42px; height: 9px; border-radius: 3px; }
+  .pct-up { background: #6aa87a; }
+  .pct-down { background: #c05858; }
+  .card-period { width: 64px; height: 8px; background: #b0b8cc; border-radius: 3px; }
+
+  /* accent stripe on cards */
+  .card.net    { border-top: 4px solid #8e97b0; }
+  .card.income { border-top: 4px solid #6aa87a; }
+  .card.assets { border-top: 4px solid #5a8ac0; }
+  .card.liab   { border-top: 4px solid #c05858; }
+  .card.net .card-icon    { background: #8e97b0; }
+  .card.income .card-icon { background: #6aa87a; }
+  .card.assets .card-icon { background: #5a8ac0; }
+  .card.liab .card-icon   { background: #c05858; }
+
+  /* ─── CHART + BREAKDOWN ROW ─── */
+  .charts-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 16px;
+  }
+  .chart-card {
+    background: #d8dce8;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 3px 12px rgba(0,0,0,.12);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .chart-title { width: 140px; height: 13px; background: #8e97b0; border-radius: 4px; }
+  .chart-area {
+    flex: 1;
+    min-height: 140px;
+    background: #c4c8d4;
+    border-radius: 8px;
+    position: relative;
+    overflow: hidden;
+  }
+  /* faux bar chart */
+  .bars {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-around;
+    padding: 0 14px;
+    height: 100%;
+  }
+  .bar {
+    width: 18px;
+    border-radius: 4px 4px 0 0;
+    background: #8e97b0;
+  }
+  .bar.accent { background: #5a8ac0; }
+
+  /* breakdown / donut placeholder */
+  .donut-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    flex: 1;
+  }
+  .donut {
+    width: 110px; height: 110px; border-radius: 50%;
+    border: 16px solid #5a8ac0;
+    border-right-color: #6aa87a;
+    border-bottom-color: #c05858;
+    border-left-color: #d0b040;
+  }
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 14px;
+    justify-content: center;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .leg-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .leg-label { width: 40px; height: 8px; background: #b0b8cc; border-radius: 3px; }
+
+  /* ─── RECENT ACTIVITY TABLE ─── */
+  .table-card {
+    background: #d8dce8;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 3px 12px rgba(0,0,0,.12);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .table-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .table-title { width: 140px; height: 13px; background: #8e97b0; border-radius: 4px; }
+  .table-action { width: 62px; height: 24px; background: #9aa2b8; border-radius: 5px; }
+
+  .tbl {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .tbl th, .tbl td {
+    text-align: left;
+    padding: 10px 12px;
+  }
+  .tbl thead { border-bottom: 2px solid #b0b8cc; }
+  .th-cell { height: 10px; background: #a0a8bf; border-radius: 3px; display: inline-block; }
+  .td-cell { height: 10px; background: #b0b8cc; border-radius: 3px; display: inline-block; }
+  .tbl tbody tr { border-bottom: 1px solid #c4c8d4; }
+  .td-badge {
+    display: inline-block;
+    width: 52px; height: 18px;
+    border-radius: 9px;
+  }
+  .badge-green  { background: rgba(106,168,122,.3); }
+  .badge-red    { background: rgba(192,88,88,.3); }
+  .badge-blue   { background: rgba(90,138,192,.3); }
+
+  /* ─── RESPONSIVE ─── */
+  @media (max-width: 1024px) {
+    .cards-row { grid-template-columns: repeat(2, 1fr); }
+    .charts-row { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 720px) {
+    .sidebar { display: none; }
+    .cards-row { grid-template-columns: 1fr; }
+    .topbar { padding: 0 16px; }
+    .tb-search { width: 140px; min-width: 0; }
+    .content { padding: 20px 16px; gap: 18px; }
+    .bar { width: 12px; }
+    .donut { width: 90px; height: 90px; border-width: 13px; }
+    .table-card { padding: 14px; overflow-x: auto; }
+    .tbl { min-width: 420px; }
+  }
+  @media (max-width: 480px) {
+    .topbar { gap: 8px; }
+    .tb-search { display: none; }
+    .content { padding: 16px 10px; gap: 14px; }
+    .card { padding: 14px 12px; }
+    .chart-card { padding: 14px; }
+    .chart-area { min-height: 110px; }
+    .greeting .gr-line { width: 160px !important; }
+    .greeting .gr-sub { width: 220px !important; }
+    .table-card { padding: 10px; }
+  }
+  @media (max-width: 360px) {
+    .content { padding: 12px 8px; gap: 12px; }
+    .card { padding: 12px 10px; }
+    .card-value { height: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sb-brand">
+    <div class="sb-logo"></div>
+    <div class="sb-name"></div>
+  </div>
+  <div class="sb-menu">
+    <div class="sb-item active"><div class="sb-icon"></div><div class="sb-label" style="width:70px"></div></div>
+    <div class="sb-item"><div class="sb-icon"></div><div class="sb-label" style="width:52px"></div></div>
+    <div class="sb-item"><div class="sb-icon"></div><div class="sb-label" style="width:60px"></div></div>
+    <div class="sb-item"><div class="sb-icon"></div><div class="sb-label" style="width:68px"></div></div>
+    <div class="sb-item"><div class="sb-icon"></div><div class="sb-label" style="width:56px"></div></div>
+    <div class="sb-item"><div class="sb-icon"></div><div class="sb-label" style="width:48px"></div></div>
+  </div>
+  <div class="sb-user">
+    <div class="sb-avatar"></div>
+    <div class="sb-uinfo">
+      <div class="sb-uname"></div>
+      <div class="sb-uemail"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="tb-title"></div>
+    <div class="tb-spacer"></div>
+    <div class="tb-search"></div>
+    <div class="tb-bell"></div>
+    <div class="tb-avatar"></div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- Greeting -->
+    <div class="greeting">
+      <div class="gr-line" style="width:220px"></div>
+      <div class="gr-sub" style="width:300px"></div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="cards-row">
+
+      <!-- Net Worth -->
+      <div class="card net">
+        <div class="card-header">
+          <div class="card-label" style="width:62px"></div>
+          <div class="card-icon"></div>
+        </div>
+        <div class="card-value"></div>
+        <div class="card-change">
+          <div class="card-arrow arrow-up"></div>
+          <div class="card-pct pct-up"></div>
+          <div class="card-period"></div>
+        </div>
+      </div>
+
+      <!-- Income Total -->
+      <div class="card income">
+        <div class="card-header">
+          <div class="card-label" style="width:72px"></div>
+          <div class="card-icon"></div>
+        </div>
+        <div class="card-value" style="width:60%"></div>
+        <div class="card-change">
+          <div class="card-arrow arrow-up"></div>
+          <div class="card-pct pct-up"></div>
+          <div class="card-period"></div>
+        </div>
+      </div>
+
+      <!-- Asset Total -->
+      <div class="card assets">
+        <div class="card-header">
+          <div class="card-label" style="width:66px"></div>
+          <div class="card-icon"></div>
+        </div>
+        <div class="card-value" style="width:65%"></div>
+        <div class="card-change">
+          <div class="card-arrow arrow-up"></div>
+          <div class="card-pct pct-up"></div>
+          <div class="card-period"></div>
+        </div>
+      </div>
+
+      <!-- Liabilities Total -->
+      <div class="card liab">
+        <div class="card-header">
+          <div class="card-label" style="width:80px"></div>
+          <div class="card-icon"></div>
+        </div>
+        <div class="card-value" style="width:58%"></div>
+        <div class="card-change">
+          <div class="card-arrow arrow-down"></div>
+          <div class="card-pct pct-down"></div>
+          <div class="card-period"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Charts Row -->
+    <div class="charts-row">
+
+      <!-- Line / bar chart -->
+      <div class="chart-card">
+        <div class="chart-title"></div>
+        <div class="chart-area">
+          <div class="bars">
+            <div class="bar" style="height:40%"></div>
+            <div class="bar accent" style="height:65%"></div>
+            <div class="bar" style="height:50%"></div>
+            <div class="bar accent" style="height:80%"></div>
+            <div class="bar" style="height:55%"></div>
+            <div class="bar accent" style="height:72%"></div>
+            <div class="bar" style="height:45%"></div>
+            <div class="bar accent" style="height:88%"></div>
+            <div class="bar" style="height:60%"></div>
+            <div class="bar accent" style="height:75%"></div>
+            <div class="bar" style="height:50%"></div>
+            <div class="bar accent" style="height:68%"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Donut breakdown -->
+      <div class="chart-card">
+        <div class="chart-title" style="width:120px"></div>
+        <div class="donut-wrap">
+          <div class="donut"></div>
+          <div class="legend">
+            <div class="legend-item"><div class="leg-dot" style="background:#5a8ac0"></div><div class="leg-label"></div></div>
+            <div class="legend-item"><div class="leg-dot" style="background:#6aa87a"></div><div class="leg-label"></div></div>
+            <div class="legend-item"><div class="leg-dot" style="background:#c05858"></div><div class="leg-label"></div></div>
+            <div class="legend-item"><div class="leg-dot" style="background:#d0b040"></div><div class="leg-label"></div></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="table-card">
+      <div class="table-header">
+        <div class="table-title"></div>
+        <div class="table-action"></div>
+      </div>
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th><div class="th-cell" style="width:50px"></div></th>
+            <th><div class="th-cell" style="width:70px"></div></th>
+            <th><div class="th-cell" style="width:56px"></div></th>
+            <th><div class="th-cell" style="width:44px"></div></th>
+            <th><div class="th-cell" style="width:50px"></div></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><div class="td-cell" style="width:60px"></div></td>
+            <td><div class="td-cell" style="width:80px"></div></td>
+            <td><div class="td-cell" style="width:50px"></div></td>
+            <td><div class="td-badge badge-green"></div></td>
+            <td><div class="td-cell" style="width:56px"></div></td>
+          </tr>
+          <tr>
+            <td><div class="td-cell" style="width:55px"></div></td>
+            <td><div class="td-cell" style="width:72px"></div></td>
+            <td><div class="td-cell" style="width:48px"></div></td>
+            <td><div class="td-badge badge-red"></div></td>
+            <td><div class="td-cell" style="width:56px"></div></td>
+          </tr>
+          <tr>
+            <td><div class="td-cell" style="width:64px"></div></td>
+            <td><div class="td-cell" style="width:68px"></div></td>
+            <td><div class="td-cell" style="width:52px"></div></td>
+            <td><div class="td-badge badge-blue"></div></td>
+            <td><div class="td-cell" style="width:56px"></div></td>
+          </tr>
+          <tr>
+            <td><div class="td-cell" style="width:58px"></div></td>
+            <td><div class="td-cell" style="width:76px"></div></td>
+            <td><div class="td-cell" style="width:44px"></div></td>
+            <td><div class="td-badge badge-green"></div></td>
+            <td><div class="td-cell" style="width:56px"></div></td>
+          </tr>
+          <tr>
+            <td><div class="td-cell" style="width:62px"></div></td>
+            <td><div class="td-cell" style="width:70px"></div></td>
+            <td><div class="td-cell" style="width:50px"></div></td>
+            <td><div class="td-badge badge-red"></div></td>
+            <td><div class="td-cell" style="width:56px"></div></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>

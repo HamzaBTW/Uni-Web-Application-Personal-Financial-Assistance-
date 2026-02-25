@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Advisr Wireframe</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #b0b8d0;
+    display: flex;
+    align-items: stretch;
+    justify-content: stretch;
+    min-height: 100vh;
+    padding: 0;
+    font-family: sans-serif;
+  }
+
+  .promo {
+    width: 100%;
+    min-height: 100vh;
+    background: #bcc3d6;
+    border-radius: 0;
+    padding: 44px 40px;
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    gap: 28px;
+    align-items: start;
+  }
+
+  /* LEFT */
+  .left { display: flex; flex-direction: column; gap: 22px; }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand-icon { width: 48px; height: 48px; border-radius: 50%; background: #8e97b0; }
+  .brand-name { width: 88px; height: 22px; background: #8e97b0; border-radius: 5px; }
+  .lines { display: flex; flex-direction: column; gap: 9px; }
+  .l { height: 13px; background: #8e97b0; border-radius: 3px; }
+  .tech { display: flex; gap: 10px; }
+  .t-icon { width: 38px; height: 38px; border-radius: 50%; background: #8e97b0; }
+  .stats-box { border: 2px solid #8e97b0; border-radius: 10px; padding: 14px 10px; display: flex; justify-content: space-around; }
+  .s-item { display: flex; flex-direction: column; gap: 6px; align-items: center; }
+  .s-num { width: 34px; height: 17px; background: #8e97b0; border-radius: 3px; }
+  .s-lbl { width: 46px; height: 10px; background: #a0a8bf; border-radius: 3px; }
+
+  /* RIGHT */
+  .screens-wrap { position: relative; }
+  .screens-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+  .badge {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 96px; height: 96px; border-radius: 50%;
+    background: #d04040; z-index: 20;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 7px;
+  }
+  .badge .b1 { width: 48px; height: 11px; background: rgba(255,255,255,.35); border-radius: 3px; }
+  .badge .b2 { width: 60px; height: 11px; background: rgba(255,255,255,.35); border-radius: 3px; }
+
+  /* screen */
+  .screen { border-radius: 10px; overflow: hidden; display: flex; flex-direction: column; background: #d8dce8; box-shadow: 0 3px 12px rgba(0,0,0,.18); }
+
+  /* nav */
+  .sn { height: 20px; display: flex; align-items: center; padding: 0 8px; gap: 6px; flex-shrink: 0; background: #c4c8d4; }
+  .sn-logo { width: 22px; height: 9px; background: #9aa2b8; border-radius: 2px; }
+  .sn-links { display: flex; gap: 5px; flex: 1; }
+  .sn-link { width: 18px; height: 6px; background: #b0b8cc; border-radius: 2px; }
+  .sn-btn { width: 40px; height: 11px; background: #9aa2b8; border-radius: 3px; }
+
+  /* body */
+  .sb { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 14px 14px 16px; min-height: 160px; background: #d8dce8; }
+  .sc { display: flex; flex-direction: column; gap: 6px; justify-content: center; }
+  .tl { height: 10px; background: #b0b8cc; border-radius: 2px; }
+  .tl.lg { height: 13px; }
+  .tl.xs { height: 7px; width: 62%; }
+  .bt { height: 18px; width: 74px; background: #9aa2b8; border-radius: 3px; margin-top: 3px; }
+  .bt2 { height: 18px; width: 58px; background: #c0c8d8; border-radius: 3px; }
+  .si { background: #a8b0c6; border-radius: 5px; min-height: 96px; }
+
+  .logo-row { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 5px; }
+  .logo-pill { width: 24px; height: 7px; background: #b0b8cc; border-radius: 2px; }
+
+  .ms-pair { display: flex; gap: 8px; margin-top: 4px; }
+  .ms { display: flex; flex-direction: column; gap: 3px; }
+  .ms-n { width: 28px; height: 11px; background: #9aa2b8; border-radius: 2px; }
+  .ms-l { width: 36px; height: 7px; background: #b0b8cc; border-radius: 2px; }
+
+  /* dark */
+  .dark { background: #1e2230; }
+  .dark .sn { background: #141826; }
+  .dark .sn-logo { background: #3a4260; }
+  .dark .sn-link { background: #2a3048; }
+  .dark .sn-btn { background: #3a4260; }
+  .dark .sb { background: #1e2230; }
+  .dark .tl { background: #2e364e; }
+  .dark .tl.lg { background: #2e364e; }
+  .dark .bt { background: #3a4260; }
+  .dark .si { background: #2e364e; }
+  .dark .ms-n { background: #3a4260; }
+  .dark .ms-l { background: #2e364e; }
+
+  /* navy */
+  .navy { background: #0c1526; }
+  .navy .sn { background: #08101e; }
+  .navy .sn-logo { background: #1e2e4a; }
+  .navy .sn-link { background: #182438; }
+  .navy .sn-btn { background: #2a4070; }
+  .navy .sb { background: #0c1526; }
+  .navy .tl { background: #1e2e4a; }
+  .navy .tl.lg { background: #1e2e4a; }
+  .navy .bt { background: #2a4070; }
+  .navy .si { background: #1e2e4a; }
+
+  /* ─── RESPONSIVE ─── */
+  @media (max-width: 860px) {
+    .promo {
+      grid-template-columns: 1fr;
+      padding: 28px 20px;
+      gap: 24px;
+    }
+    .left { max-width: 360px; }
+    .screens-grid { gap: 10px; }
+  }
+  @media (max-width: 540px) {
+    .promo { padding: 20px 12px; gap: 18px; }
+    .screens-grid { grid-template-columns: 1fr; gap: 12px; }
+    .badge { width: 72px; height: 72px; }
+    .badge .b1 { width: 36px; height: 9px; }
+    .badge .b2 { width: 46px; height: 9px; }
+    .tech { flex-wrap: wrap; }
+    .stats-box { flex-wrap: wrap; gap: 10px; padding: 10px; }
+    .sb { min-height: 120px; padding: 10px; gap: 6px; }
+    .si { min-height: 70px; }
+  }
+  @media (max-width: 360px) {
+    .promo { padding: 14px 8px; gap: 14px; }
+    .brand-icon { width: 36px; height: 36px; }
+    .brand-name { width: 68px; height: 18px; }
+    .t-icon { width: 30px; height: 30px; }
+    .sb { min-height: 100px; padding: 8px; }
+    .si { min-height: 56px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="promo">
+
+  <!-- LEFT PANEL -->
+  <div class="left">
+    <div class="brand">
+      <div class="brand-icon"></div>
+      <div class="brand-name"></div>
+    </div>
+    <div class="lines">
+      <div class="l" style="width:100%"></div>
+      <div class="l" style="width:88%"></div>
+      <div class="l" style="width:65%"></div>
+    </div>
+    <div class="tech">
+      <div class="t-icon"></div>
+      <div class="t-icon"></div>
+      <div class="t-icon"></div>
+      <div class="t-icon"></div>
+    </div>
+    <div class="stats-box">
+      <div class="s-item"><div class="s-num"></div><div class="s-lbl"></div></div>
+      <div class="s-item"><div class="s-num"></div><div class="s-lbl"></div></div>
+      <div class="s-item"><div class="s-num"></div><div class="s-lbl"></div></div>
+    </div>
+  </div>
+
+  <!-- RIGHT: 6 mini screens (3 rows × 2 cols) -->
+  <div class="screens-wrap">
+    <div class="screens-grid">
+
+      <!-- R1 L: light -->
+      <div class="screen">
+        <div class="sn"><div class="sn-logo"></div><div class="sn-links"><div class="sn-link"></div><div class="sn-link"></div><div class="sn-link"></div><div class="sn-link"></div></div><div class="sn-btn"></div></div>
+        <div class="sb">
+          <div class="sc">
+            <div class="tl lg" style="width:95%"></div>
+            <div class="tl lg" style="width:82%"></div>
+            <div class="tl lg" style="width:90%"></div>
+            <div class="tl xs"></div>
+            <div class="tl xs" style="width:50%"></div>
+            <div style="display:flex;gap:5px;margin-top:4px"><div class="bt"></div><div class="bt2"></div></div>
+          </div>
+          <div class="si"></div>
+        </div>
+      </div>
+
+      <!-- R1 R: dark -->
+      <div class="screen dark">
+        <div class="sn"><div class="sn-logo"></div><div class="sn-links"><div class="sn-link"></div><div class="sn-link"></div><div class="sn-link"></div><div class="sn-link"></div></div><div class="sn-btn"></div></div>
+        <div class="sb">
+          <div class="sc">
+            <div class="tl lg" style="width:90%"></div>
+            <div class="tl lg" style="width:85%"></div>
+            <div class="tl lg" style="width:88%"></div>
+            <div class="tl xs"></div>
+            <div class="tl xs" style="width:60%"></div>
+            <div class="bt" style="margin-top:5px"></div>
+            <div class="ms-pair"><div class="ms"><div class="ms-n"></div><div class="ms-l"></div></div><div class="ms"><div class="ms-n"></div><div class="ms-l"></div></div></div>
+          </div>
+          <div class="si"></div>
+        </div>
+      </div>
+
+      <!-- R2 L: light green accent -->
+      <div class="screen">
+        <div class="sn"><div class="sn-logo"></div><div class="sn-links"><div class="sn-link"></div><div class="sn-link"></div><div class="sn-link"></div><div class="sn-link"></div></div><div class="sn-btn" style="background:#7ab898"></div></div>
+        <div class="sb">
+          <div class="sc">
+            <div class="tl lg" style="width:95%"></div>
+            <div class="tl lg" style="width:80%"></div>
+            <div class="tl lg" style="width:88%"></div>
+            <div class="tl xs"></div>
+            <div class="tl xs" style="width:55%"></div>
+            <div class="bt" style="background:#7ab898;margin-top:5px"></div>
+            <div class="ms-pair"><div class="ms"><div class="ms-n"></div><div class="ms-l"></div></div><div class="ms"><div class="ms-n"></div><div class="ms-l"></div></div></div>
+          </div>
+          <div class="si"></div>
+        </div>
+      </div>
+
+      <!-- R2 R: deep navy -->
+      <div class="screen navy">
+        <div class="sn"><div class="sn-logo"></div><div class="sn-links"><div class="sn-link"></div><div class="sn-link"></div><div class="sn-link"></div><div class="sn-link"></div></div><div class="sn-btn"></div></div>
+        <div class="sb">
+          <div class="sc">
+            <div class="tl lg" style="width:92%"></div>
+            <div class="tl lg" style="width:85%"></div>
+            <div class="tl lg" style="width:88%"></div>
+            <div class="tl xs"></div>
+            <div class="tl xs" style="width:65%"></div>
+            <div style="display:flex;gap:5px;margin-top:5px"><div class="bt"></div><div class="bt" style="background:transparent;border:1px solid #2a4070"></div></div>
+          </div>
+          <div class="si"></div>
+        </div>
+      </div>
+
+      <!-- R3 L: light with logo strip -->
+      <div class="screen">
+        <div class="sn"><div class="sn-logo"></div><div class="sn-links"><div class="sn-link"></div><div class="sn-link"></div><div class="sn-link"></div><div class="sn-link"></div></div><div class="sn-btn" style="background:#c05858"></div></div>
+        <div class="sb">
+          <div class="sc">
+            <div class="tl lg" style="width:95%"></div>
+            <div class="tl lg" style="width:80%"></div>
+            <div class="tl lg" style="width:88%"></div>
+            <div class="tl xs"></div>
+            <div class="tl xs" style="width:55%"></div>
+            <div style="display:flex;gap:5px;margin-top:4px"><div class="bt"></div><div class="bt2"></div></div>
+            <div class="logo-row"><div class="logo-pill"></div><div class="logo-pill"></div><div class="logo-pill"></div><div class="logo-pill"></div></div>
+          </div>
+          <div class="si"></div>
+        </div>
+      </div>
+
+      <!-- R3 R: light orange accent -->
+      <div class="screen">
+        <div class="sn"><div class="sn-logo"></div><div class="sn-links"><div class="sn-link"></div><div class="sn-link"></div><div class="sn-link"></div><div class="sn-link"></div><div class="sn-link"></div></div><div class="sn-btn" style="background:#b87030"></div></div>
+        <div class="sb">
+          <div class="sc">
+            <div class="tl lg" style="width:90%"></div>
+            <div class="tl lg" style="width:85%"></div>
+            <div class="tl lg" style="width:80%"></div>
+            <div class="tl xs"></div>
+            <div class="tl xs" style="width:55%"></div>
+            <div style="display:flex;gap:5px;margin-top:4px"><div class="bt" style="background:#b87030"></div><div class="bt2"></div></div>
+          </div>
+          <div class="si"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
