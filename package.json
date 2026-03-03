@@ -1,0 +1,29 @@
+{
+  "name": "uni-web-application-personal-financial-assistance-",
+  "version": "1.0.0",
+  "description": "A comprehensive web application designed to help users manage and understand their complete financial picture. The application is organised into **6 key blocks**, each represented as a dedicated sub-page.",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HamzaBTW/Uni-Web-Application-Personal-Financial-Assistance-.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/HamzaBTW/Uni-Web-Application-Personal-Financial-Assistance-/issues"
+  },
+  "homepage": "https://github.com/HamzaBTW/Uni-Web-Application-Personal-Financial-Assistance-#readme",
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "better-sqlite3": "^12.6.2",
+    "ejs": "^4.0.1",
+    "express": "^5.2.1",
+    "express-session": "^1.19.0"
+  }
+}

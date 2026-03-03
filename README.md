@@ -1,6 +1,6 @@
 # Personal Financial Assistance
 
-A comprehensive web application designed to help users manage and understand their complete financial picture. The application is organised into **6 key blocks**, each represented as a dedicated sub-page.
+A comprehensive web application designed to help users manage and understand their complete financial picture. The application is organised into **7 key blocks**, each represented as a dedicated sub-page.
 
 ---
 
@@ -192,7 +192,7 @@ Setting Up the account, or creating a new account for a new user.
 - **Express** — web framework for routing & middleware
 - **SQLite** (`better-sqlite3`) — lightweight file-based relational database
 - **EJS** — templating engine for rendering HTML views
-- **bcrypt** — password hashing
+- **bcryptjs** — password hashing
 - **express-session** — server-side session management
 - **HTML5** — semantic page structure
 - **CSS3** — styling and responsive layout
@@ -204,42 +204,53 @@ Setting Up the account, or creating a new account for a new user.
 
 ```
 Web_Assigment/
-├── server.js                 # Express app entry point
+├── app.js                    # Express app entry point
 ├── package.json              # Dependencies & scripts
 ├── database.js               # SQLite setup & table creation
+├── .gitignore                # Ignores node_modules, .db files
+├── database/
+│   └── schema.sql            # SQL schema (all 7 CREATE TABLE statements)
+├── routes/
+│   └── auth.js               # Login, signup, logout routes
+├── views/
+│   ├── partials/
+│   │   └── navbar.ejs        # Shared navigation bar
+│   ├── dashboard.ejs         # Landing / dashboard page
+│   ├── login.ejs             # Login page
+│   └── signup.ejs            # Sign-up page
+├── public/
+│   └── css/
+│       └── style.css         # Global stylesheet
+├── data/
+│   └── finance.db            # SQLite database file (auto-created)
+├── planning-guide.md         # Full planning document & SQL queries
+├── Database_Diagram.pdf      # ER diagram export
+└── README.md
+```
+
+### Planned (not yet implemented)
+
+```
 ├── middleware/
 │   └── auth.js               # requireAuth session middleware
 ├── routes/
-│   ├── authRoutes.js         # Login, signup, logout
-│   ├── dashboardRoutes.js    # Dashboard (GET /)
-│   ├── incomeRoutes.js       # Income & Tax CRUD
-│   ├── assetsRoutes.js       # Assets CRUD
-│   ├── liabilitiesRoutes.js  # Liabilities CRUD
-│   ├── protectionRoutes.js   # Protection CRUD
-│   ├── estateRoutes.js       # Estate CRUD
-│   └── intangiblesRoutes.js  # Intangibles CRUD
+│   ├── dashboard.js          # Dashboard (GET /)
+│   ├── income.js             # Income & Tax CRUD
+│   ├── assets.js             # Assets CRUD
+│   ├── liabilities.js        # Liabilities CRUD
+│   ├── protection.js         # Protection CRUD
+│   ├── estate.js             # Estate CRUD
+│   └── intangibles.js        # Intangibles CRUD
 ├── views/
-│   ├── partials/
-│   │   ├── nav.ejs           # Shared navigation bar
-│   │   └── footer.ejs        # Shared footer
-│   ├── layout.ejs            # Base layout template
-│   ├── dashboard.ejs         # Landing / dashboard page
-│   ├── login.ejs             # Login page
-│   ├── signup.ejs            # Sign-up page
 │   ├── income.ejs            # 1. Income & Tax
 │   ├── assets.ejs            # 2. Assets
 │   ├── liabilities.ejs       # 3. Liabilities
 │   ├── protection.ejs        # 4. Protection (Insurance)
 │   ├── estate.ejs            # 5. Estate (Legal)
 │   └── intangibles.ejs       # 6. Intangibles
-├── public/
-│   ├── css/
-│   │   └── style.css         # Global stylesheet
-│   └── js/
-│       └── main.js           # Client-side scripts (charts, validation)
-├── data/
-│   └── finance.db            # SQLite database file (auto-created)
-└── README.md
+└── public/
+    └── js/
+        └── main.js           # Client-side scripts (charts, validation)
 ```
 
 ---
@@ -255,8 +266,14 @@ Web_Assigment/
    ```bash
    npm start
    ```
+   Or run directly:
+   ```bash
+   node app.js
+   ```
 4. Open `http://localhost:3000` in your browser.
-5. Create an account on the Sign Up page, then log in and navigate between the six blocks.
+5. Create an account on the Sign Up page, then log in.
+
+> **Note:** The database (`data/finance.db`) is created automatically on first run. All 7 tables are set up via `database/schema.sql`.
 
 ---
 
