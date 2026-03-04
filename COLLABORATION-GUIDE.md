@@ -118,6 +118,24 @@ This means:
 
 ## Rules to Avoid Merge Conflicts
 
+### Rule 0: Adding Shared Data (Seed Values)
+
+To add rows that all contributors should have in their local database, append to `database/seed.sql`:
+
+```sql
+-- Always use INSERT OR IGNORE and an explicit id
+INSERT OR IGNORE INTO income (id, user_id, source_type, description, amount, frequency, tax_band) VALUES
+(3, 1, 'Freelance', 'Design work', 500, 'Monthly', 'Basic Rate');
+```
+
+**Rules:**
+- Always use `INSERT OR IGNORE` — safe to re-run on every restart
+- Always provide an explicit `id` so foreign key references stay consistent
+- Append at the bottom — never edit or delete existing rows
+- Commit the file to Git — everyone gets the data automatically on `npm start`
+
+---
+
 ### Rule 1: Never Edit Existing Schema Columns — Only Add
 
 If you need new tables or columns, **add them** to `database/schema.sql`. Do not rename or delete existing tables/columns that other developers depend on.

@@ -15,6 +15,14 @@ const schemaPath = path.join(__dirname, 'database', 'schema.sql');
 const schema = fs.readFileSync(schemaPath, 'utf-8');
 db.exec(schema);
 
+// Run seed data if the file exists
+const seedPath = path.join(__dirname, 'database', 'seed.sql');
+if (fs.existsSync(seedPath)) {
+    const seed = fs.readFileSync(seedPath, 'utf-8');
+    db.exec(seed);
+    console.log('Seed data applied.');
+}
+
 console.log('Database initialised — all tables ready.');
 
 // Export the db instance so route files can use it
