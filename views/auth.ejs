@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/templates/Auth/auth.css">
+</head>
+<body>
+    <div class="auth-page">
+        <div class="auth-container">
+            <a href="/" class="auth-brand">
+                <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="100" cy="100" r="100" fill="#0d0d0d"/>
+                    <ellipse cx="100" cy="115" rx="80" ry="50" fill="none" stroke="#d42020" stroke-width="10" stroke-linecap="round" transform="rotate(-10 100 115)"/>
+                    <ellipse cx="100" cy="115" rx="80" ry="50" fill="none" stroke="#1a8fcb" stroke-width="6" stroke-dasharray="0 160 100 300" stroke-linecap="round" transform="rotate(-10 100 115)"/>
+                    <text x="100" y="112" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-weight="900" font-size="62" fill="#1a8fcb">PFA</text>
+                </svg>
+            </a>
+
+            <!-- Tab switcher -->
+            <div class="auth-tabs">
+                <button class="auth-tab<%= mode === 'login' ? ' active' : '' %>" data-tab="login">Login</button>
+                <button class="auth-tab<%= mode === 'signup' ? ' active' : '' %>" data-tab="signup">Sign Up</button>
+            </div>
+
+            <!-- LOGIN PANEL -->
+            <div class="auth-panel<%= mode === 'login' ? ' active' : '' %>" id="panel-login">
+                <h2>Welcome Back</h2>
+                <p class="auth-subtitle">Sign in to continue to your dashboard</p>
+
+                <% if (mode === 'login' && error) { %>
+                    <div class="error-msg"><%= error %></div>
+                <% } %>
+
+                <form action="/login" method="POST">
+                    <div class="form-group">
+                        <label for="login-email">Email</label>
+                        <input type="email" id="login-email" name="email" placeholder="you@example.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">Password</label>
+                        <input type="password" id="login-password" name="password" placeholder="••••••••" required>
+                    </div>
+                    <button type="submit" class="btn">Login</button>
+                </form>
+
+                <p class="auth-footer">Don't have an account? <a data-switch="signup">Sign Up</a></p>
+            </div>
+
+            <!-- SIGNUP PANEL -->
+            <div class="auth-panel<%= mode === 'signup' ? ' active' : '' %>" id="panel-signup">
+                <h2>Create Account</h2>
+                <p class="auth-subtitle">Start managing your finances today</p>
+
+                <% if (mode === 'signup' && error) { %>
+                    <div class="error-msg"><%= error %></div>
+                <% } %>
+
+                <form action="/signup" method="POST">
+                    <div class="form-group">
+                        <label for="signup-email">Email</label>
+                        <input type="email" id="signup-email" name="email" placeholder="you@example.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="signup-username">Username</label>
+                        <input type="text" id="signup-username" name="username" placeholder="Choose a username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="signup-password">Password</label>
+                        <input type="password" id="signup-password" name="password" placeholder="Min. 6 characters" required minlength="6">
+                    </div>
+                    <div class="form-group">
+                        <label for="signup-confirm">Confirm Password</label>
+                        <input type="password" id="signup-confirm" name="confirm_password" placeholder="Re-enter password" required minlength="6">
+                    </div>
+                    <button type="submit" class="btn">Sign Up</button>
+                </form>
+
+                <p class="auth-footer">Already have an account? <a data-switch="login">Login</a></p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tab switching
+        document.querySelectorAll('.auth-tab, [data-switch]').forEach(el => {
+            el.addEventListener('click', () => {
+                const target = el.dataset.tab || el.dataset.switch;
+                document.querySelectorAll('.auth-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === target));
+                document.querySelectorAll('.auth-panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + target));
+            });
+        });
+    </script>
+</body>
+</html>

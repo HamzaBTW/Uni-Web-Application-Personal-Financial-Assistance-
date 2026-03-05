@@ -13,6 +13,10 @@ app.use(express.urlencoded({ extended: false }));
 // Serve static files (CSS, images, client JS)
 app.use(express.static(path.join(__dirname, 'public')));
 
+// Serve template assets (welcome.css, login.css, signup.css, etc.)
+app.use('/templates', express.static(path.join(__dirname, 'templates')));
+app.use(express.static(path.join(__dirname, 'templates', 'Welcome Page')));
+
 // Session config
 app.use(session({
     secret: 'finance-app-secret-key',
@@ -36,8 +40,14 @@ app.set('views', path.join(__dirname, 'views'));
 const authRoutes = require('./routes/auth');
 app.use(authRoutes);
 
-// Dashboard (protected)
+// Public landing page
 app.get('/', (req, res) => {
+    if (req.session.user) return res.redirect('/dashboard');
+    res.sendFile(path.join(__dirname, 'templates', 'Welcome Page', 'welcome.html'));
+});
+
+// Dashboard (protected)
+app.get('/dashboard', (req, res) => {
     if (!req.session.user) return res.redirect('/login');
     res.render('dashboard', { title: 'Dashboard' });
 });

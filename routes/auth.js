@@ -6,8 +6,8 @@ const router = express.Router();
 
 // GET /login
 router.get('/login', (req, res) => {
-    if (req.session.user) return res.redirect('/');
-    res.render('login', { title: 'Login', error: null });
+    if (req.session.user) return res.redirect('/dashboard');
+    res.render('auth', { title: 'Login', mode: 'login', error: null });
 });
 
 // POST /login
@@ -17,12 +17,12 @@ router.post('/login', (req, res) => {
     const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
 
     if (!user) {
-        return res.render('login', { title: 'Login', error: 'Invalid email or password.' });
+        return res.render('auth', { title: 'Login', mode: 'login', error: 'Invalid email or password.' });
     }
 
     const match = bcrypt.compareSync(password, user.password_hash);
     if (!match) {
-        return res.render('login', { title: 'Login', error: 'Invalid email or password.' });
+        return res.render('auth', { title: 'Login', mode: 'login', error: 'Invalid email or password.' });
     }
 
     // Store user in session (exclude password hash)
@@ -32,13 +32,13 @@ router.post('/login', (req, res) => {
         username: user.username
     };
 
-    res.redirect('/');
+    res.redirect('/dashboard');
 });
 
 // GET /signup
 router.get('/signup', (req, res) => {
-    if (req.session.user) return res.redirect('/');
-    res.render('signup', { title: 'Sign Up', error: null });
+    if (req.session.user) return res.redirect('/dashboard');
+    res.render('auth', { title: 'Sign Up', mode: 'signup', error: null });
 });
 
 // POST /signup
@@ -47,21 +47,21 @@ router.post('/signup', (req, res) => {
 
     // Validation
     if (!email || !username || !password || !confirm_password) {
-        return res.render('signup', { title: 'Sign Up', error: 'All fields are required.' });
+        return res.render('auth', { title: 'Sign Up', mode: 'signup', error: 'All fields are required.' });
     }
 
     if (password !== confirm_password) {
-        return res.render('signup', { title: 'Sign Up', error: 'Passwords do not match.' });
+        return res.render('auth', { title: 'Sign Up', mode: 'signup', error: 'Passwords do not match.' });
     }
 
     if (password.length < 6) {
-        return res.render('signup', { title: 'Sign Up', error: 'Password must be at least 6 characters.' });
+        return res.render('auth', { title: 'Sign Up', mode: 'signup', error: 'Password must be at least 6 characters.' });
     }
 
     // Check if email already exists
     const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
     if (existing) {
-        return res.render('signup', { title: 'Sign Up', error: 'Email already registered.' });
+        return res.render('auth', { title: 'Sign Up', mode: 'signup', error: 'Email already registered.' });
     }
 
     // Hash password and insert

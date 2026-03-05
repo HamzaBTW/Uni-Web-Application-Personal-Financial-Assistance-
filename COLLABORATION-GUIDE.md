@@ -279,6 +279,33 @@ Or use a **Pull Request** on GitHub (recommended) — this lets both developers 
 
 ---
 
+## Database Access Policy
+
+> ⚠️ **Protected files — admin approval required**
+>
+> The following files are protected by GitHub CODEOWNERS. Any Pull Request that touches them **requires explicit approval from @HamzaBTW** before it can be merged into `main`. Direct pushes to `main` are blocked entirely.
+>
+> | File | Protection |
+> |---|---|
+> | `database.js` | Admin only |
+> | `database/schema.sql` | Admin only (you may append new tables) |
+> | `database/seed.sql` | Admin only (you may append new rows) |
+
+### What you CAN do:
+- Append new tables to `database/schema.sql` (at the bottom, using `CREATE TABLE IF NOT EXISTS`)
+- Append new seed rows to `database/seed.sql` (using `INSERT OR IGNORE`)
+- Write `INSERT` and `SELECT` queries inside your own route files
+- Create new route files that add or read data
+
+### What you CANNOT do:
+- Rename, alter, or delete existing tables or columns in `schema.sql`
+- Write `DROP`, `DELETE`, or destructive `UPDATE` queries
+- Edit `database.js` directly
+- Open or manually edit `data/finance.db`
+- Push directly to `main` — always use a Pull Request
+
+---
+
 ## Summary
 
 1. **Clone** the repo and create your own branch (`dev/your-name`)
@@ -287,3 +314,4 @@ Or use a **Pull Request** on GitHub (recommended) — this lets both developers 
 4. **Append** to shared files (`schema.sql`, `app.js`, `navbar.ejs`) at the bottom
 5. **Never** modify or delete existing database columns/tables others depend on
 6. **Merge** via Pull Requests on GitHub after reviewing together
+7. **Database changes** require admin approval — see Database Access Policy above
