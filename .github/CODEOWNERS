@@ -1,0 +1,4 @@
+# Database files — only admin can approve changes
+/database.js           @HamzaBTW
+/database/schema.sql   @HamzaBTW
+/database/seed.sql     @HamzaBTW
