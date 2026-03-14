@@ -3,16 +3,43 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
+const cookie = require('cookie');
 const db = require('./database');
 
 const DEFAULT_PORT = Number(process.env.PORT) || 3000;
+const MAX_BODY_SIZE = 1024 * 100; // 100 KB
+const ALLOWED_TABLES = new Set(['protection', 'estate', 'income', 'assets', 'liabilities', 'intangibles']);
 
 // Session store: sessionId -> { id, email, username }
 const sessions = new Map();
 
 function getSessionId(req) {
-    const match = (req.headers.cookie || '').match(/(?:^|;\s*)sid=([^;]+)/);
-    return match ? match[1] : null;
+    const cookies = cookie.parse(req.headers.cookie || '');
+    return cookies.sid || null;
+}
+
+function buildSessionCookie(sid, maxAge = 7200) {
+    return cookie.serialize('sid', sid, {
+        httpOnly: true,
+        path: '/',
+        maxAge: maxAge,
+        sameSite: 'strict',
+        secure: process.env.NODE_ENV === 'production',
+    });
+}
+
+function securityHeaders() {
+    return {
+        'X-Content-Type-Options': 'nosniff',
+        'X-Frame-Options': 'DENY',
+        'X-XSS-Protection': '1; mode=block',
+        'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'",
+    };
+}
+
+function sanitizeInput(str) {
+    if (str == null) return null;
+    return String(str).trim().replace(/<[^>]*>/g, '').substring(0, 1000);
 }
 
 function getUser(req) {
@@ -22,25 +49,38 @@ function getUser(req) {
 
 function serveFile(res, filePath) {
     fs.readFile(filePath, (err, data) => {
-        if (err) { res.writeHead(404); return res.end('Not found'); }
+        if (err) { res.writeHead(404, { ...securityHeaders() }); return res.end('Not found'); }
         const ext = path.extname(filePath).toLowerCase();
         const types = { '.html': 'text/html', '.css': 'text/css', '.js': 'application/javascript', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.ico': 'image/x-icon' };
-        res.writeHead(200, { 'Content-Type': types[ext] || 'application/octet-stream' });
+        res.writeHead(200, { 'Content-Type': types[ext] || 'application/octet-stream', ...securityHeaders() });
         res.end(data);
     });
 }
 
 function readBody(req) {
-    return new Promise(resolve => { let b = ''; req.on('data', c => b += c); req.on('end', () => resolve(b)); });
+    return new Promise((resolve, reject) => {
+        let b = '';
+        let size = 0;
+        req.on('data', c => {
+            size += c.length;
+            if (size > MAX_BODY_SIZE) {
+                req.destroy();
+                return reject(new Error('Request body too large'));
+            }
+            b += c;
+        });
+        req.on('end', () => resolve(b));
+        req.on('error', reject);
+    });
 }
 
 function json(res, status, data) {
-    res.writeHead(status, { 'Content-Type': 'application/json' });
+    res.writeHead(status, { 'Content-Type': 'application/json', ...securityHeaders() });
     res.end(JSON.stringify(data));
 }
 
 function redirect(res, location) {
-    res.writeHead(302, { 'Location': location });
+    res.writeHead(302, { 'Location': location, ...securityHeaders() });
     res.end();
 }
 
@@ -56,23 +96,47 @@ const server = http.createServer(async (req, res) => {
 
     // POST /api/login
     if (pathname === '/api/login' && method === 'POST') {
-        const { email, password } = Object.fromEntries(new URLSearchParams(await readBody(req)));
+        let fields;
+        try {
+            fields = Object.fromEntries(new URLSearchParams(await readBody(req)));
+        } catch (err) {
+            return json(res, 413, { error: 'Request body too large.' });
+        }
+        const email = (fields.email || '').trim().toLowerCase();
+        const password = fields.password || '';
+        if (!email) return json(res, 400, { error: 'Email is required.' });
         const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
         if (!user || !bcrypt.compareSync(password, user.password_hash)) {
             return json(res, 401, { error: 'Invalid email or password.' });
         }
         const sid = crypto.randomBytes(32).toString('hex');
         sessions.set(sid, { id: user.id, email: user.email, username: user.username });
-        res.writeHead(200, { 'Content-Type': 'application/json', 'Set-Cookie': `sid=${sid}; HttpOnly; Path=/; Max-Age=7200` });
+        res.writeHead(200, {
+            'Content-Type': 'application/json',
+            'Set-Cookie': buildSessionCookie(sid),
+            ...securityHeaders()
+        });
         return res.end(JSON.stringify({ success: true }));
     }
 
     // POST /api/signup
     if (pathname === '/api/signup' && method === 'POST') {
-        const { email, username, password, confirm_password } = Object.fromEntries(new URLSearchParams(await readBody(req)));
+        let fields;
+        try {
+            fields = Object.fromEntries(new URLSearchParams(await readBody(req)));
+        } catch (err) {
+            return json(res, 413, { error: 'Request body too large.' });
+        }
+        const email = (fields.email || '').trim().toLowerCase();
+        const username = (fields.username || '').trim();
+        const password = fields.password || '';
+        const confirm_password = fields.confirm_password || '';
         if (!email || !username || !password || !confirm_password) return json(res, 400, { error: 'All fields are required.' });
         if (password !== confirm_password) return json(res, 400, { error: 'Passwords do not match.' });
         if (password.length < 6) return json(res, 400, { error: 'Password must be at least 6 characters.' });
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) return json(res, 400, { error: 'Invalid email format.' });
+        if (!/^[a-zA-Z0-9_ ]{2,30}$/.test(username)) return json(res, 400, { error: 'Username must be 2-30 characters (letters, numbers, spaces, underscores).' });
         if (db.prepare('SELECT id FROM users WHERE email = ?').get(email)) return json(res, 400, { error: 'Email already registered.' });
         db.prepare('INSERT INTO users (email, username, password_hash) VALUES (?, ?, ?)').run(email, username, bcrypt.hashSync(password, 10));
         return json(res, 200, { success: true });
@@ -82,8 +146,39 @@ const server = http.createServer(async (req, res) => {
     if (pathname === '/api/logout' && method === 'GET') {
         const sid = getSessionId(req);
         if (sid) sessions.delete(sid);
-        res.writeHead(302, { 'Set-Cookie': 'sid=; HttpOnly; Path=/; Max-Age=0', 'Location': '/auth.html' });
+        res.writeHead(302, {
+            'Set-Cookie': buildSessionCookie('', 0),
+            'Location': '/auth.html',
+            ...securityHeaders()
+        });
         return res.end();
+    }
+
+    // POST /api/preferences — save user preferences as a cookie
+    if (pathname === '/api/preferences' && method === 'POST') {
+        const user = getUser(req);
+        if (!user) return json(res, 401, { error: 'Not logged in' });
+        let fields;
+        try {
+            fields = Object.fromEntries(new URLSearchParams(await readBody(req)));
+        } catch (err) {
+            return json(res, 413, { error: 'Request body too large.' });
+        }
+        const allowed = ['light', 'dark'];
+        const safeTheme = allowed.includes(fields.theme) ? fields.theme : 'light';
+        const prefCookie = cookie.serialize('prefs', JSON.stringify({ theme: safeTheme }), {
+            httpOnly: false,
+            path: '/',
+            maxAge: 31536000,
+            sameSite: 'strict',
+            secure: process.env.NODE_ENV === 'production',
+        });
+        res.writeHead(200, {
+            'Content-Type': 'application/json',
+            'Set-Cookie': prefCookie,
+            ...securityHeaders()
+        });
+        return res.end(JSON.stringify({ success: true, theme: safeTheme }));
     }
 
     // ─── AUTH-GUARDED HELPER ───
@@ -95,6 +190,9 @@ const server = http.createServer(async (req, res) => {
 
     // ─── GENERIC CRUD ───
     function handleCrud(tableName) {
+        if (!ALLOWED_TABLES.has(tableName)) {
+            throw new Error(`Invalid table name: ${tableName}`);
+        }
         const base = `/api/${tableName}`;
 
         // GET /api/{table} — list rows for logged-in user
@@ -127,22 +225,40 @@ const server = http.createServer(async (req, res) => {
     }
 
     async function executeCrud(tableName, columns, match) {
+        if (!ALLOWED_TABLES.has(tableName)) {
+            throw new Error(`Invalid table name: ${tableName}`);
+        }
         const user = requireAuth();
         if (!user) return;
         const colNames = columns.map(c => c.name);
+        for (const col of colNames) {
+            if (!/^[a-z_]+$/.test(col)) {
+                throw new Error(`Invalid column name: ${col}`);
+            }
+        }
 
         if (match === 'create') {
-            const fields = Object.fromEntries(new URLSearchParams(await readBody(req)));
+            let fields;
+            try {
+                fields = Object.fromEntries(new URLSearchParams(await readBody(req)));
+            } catch (err) {
+                return json(res, 413, { error: 'Request body too large.' });
+            }
             const placeholders = colNames.map(() => '?').join(', ');
-            const values = colNames.map(c => fields[c] || null);
+            const values = colNames.map(c => sanitizeInput(fields[c]));
             db.prepare(`INSERT INTO ${tableName} (user_id, ${colNames.join(', ')}) VALUES (?, ${placeholders})`).run(user.id, ...values);
             return json(res, 200, { success: true });
         }
 
         if (match.action === 'edit') {
-            const fields = Object.fromEntries(new URLSearchParams(await readBody(req)));
+            let fields;
+            try {
+                fields = Object.fromEntries(new URLSearchParams(await readBody(req)));
+            } catch (err) {
+                return json(res, 413, { error: 'Request body too large.' });
+            }
             const sets = colNames.map(c => `${c} = ?`).join(', ');
-            const values = colNames.map(c => fields[c] || null);
+            const values = colNames.map(c => sanitizeInput(fields[c]));
             db.prepare(`UPDATE ${tableName} SET ${sets} WHERE id = ? AND user_id = ?`).run(...values, match.id, user.id);
             return json(res, 200, { success: true });
         }
@@ -223,7 +339,7 @@ const server = http.createServer(async (req, res) => {
         if (fs.statSync(f, { throwIfNoEntry: false })?.isFile()) return serveFile(res, f);
     }
 
-    res.writeHead(404);
+    res.writeHead(404, { ...securityHeaders() });
     res.end('Not found');
 });
 
