@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Protection — Financial Assistant</title>
+    <link rel="stylesheet" href="/Dashboard/dashboard.css">
+    <link rel="stylesheet" href="protection.css">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/dashboard.html" class="brand">Financial Assistant</a>
+        <div id="nav-links" style="display:none">
+            <a href="/dashboard.html">Dashboard</a>
+            <a href="/income.html">Income</a>
+            <a href="/assets.html">Assets</a>
+            <a href="/liabilities.html">Liabilities</a>
+            <a href="/protection.html">Protection</a>
+            <a href="/estate.html">Estate</a>
+            <a href="/intangibles.html">Intangibles</a>
+            <a href="/api/logout">Logout</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h1>Protection</h1>
+            <button class="btn btn-primary" id="add-btn">+ Add Policy</button>
+        </div>
+
+        <!-- Add / Edit Form -->
+        <div class="form-panel" id="form-panel">
+            <h2 id="form-title">Add Policy</h2>
+            <form id="policy-form">
+                <input type="hidden" id="edit-id" value="">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="policy_type">Policy Type</label>
+                        <select id="policy_type" name="policy_type" required>
+                            <option value="">Select type…</option>
+                            <option value="Life Insurance">Life Insurance</option>
+                            <option value="Health Insurance">Health Insurance</option>
+                            <option value="Home Insurance">Home Insurance</option>
+                            <option value="Car Insurance">Car Insurance</option>
+                            <option value="Income Protection">Income Protection</option>
+                            <option value="Critical Illness">Critical Illness</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="provider">Provider</label>
+                        <input type="text" id="provider" name="provider" placeholder="e.g. Aviva, AXA">
+                    </div>
+                    <div class="form-group">
+                        <label for="premium">Annual Premium (£)</label>
+                        <input type="number" id="premium" name="premium" step="0.01" min="0" placeholder="0.00">
+                    </div>
+                    <div class="form-group">
+                        <label for="start_date">Start Date</label>
+                        <input type="date" id="start_date" name="start_date">
+                    </div>
+                    <div class="form-group">
+                        <label for="renewal_date">Renewal Date</label>
+                        <input type="date" id="renewal_date" name="renewal_date">
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Save</button>
+                        <button type="button" class="btn btn-ghost" id="cancel-btn">Cancel</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Data Table -->
+        <div id="table-wrap">
+            <div class="empty-state" id="empty-state">
+                <p>No insurance policies yet.</p>
+                <button class="btn btn-primary" id="empty-add-btn">+ Add Your First Policy</button>
+            </div>
+            <table class="data-table" id="data-table" style="display:none">
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Provider</th>
+                        <th>Premium</th>
+                        <th>Start</th>
+                        <th>Renewal</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="protection.js" defer></script>
+</body>
+</html>

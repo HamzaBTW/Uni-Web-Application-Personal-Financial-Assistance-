@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estate — Financial Assistant</title>
+    <link rel="stylesheet" href="/Dashboard/dashboard.css">
+    <link rel="stylesheet" href="estate.css">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/dashboard.html" class="brand">Financial Assistant</a>
+        <div id="nav-links" style="display:none">
+            <a href="/dashboard.html">Dashboard</a>
+            <a href="/income.html">Income</a>
+            <a href="/assets.html">Assets</a>
+            <a href="/liabilities.html">Liabilities</a>
+            <a href="/protection.html">Protection</a>
+            <a href="/estate.html">Estate</a>
+            <a href="/intangibles.html">Intangibles</a>
+            <a href="/api/logout">Logout</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="page-header">
+            <h1>Estate Planning</h1>
+            <button class="btn btn-primary" id="add-btn">+ Add Item</button>
+        </div>
+
+        <!-- Add / Edit Form -->
+        <div class="form-panel" id="form-panel">
+            <h2 id="form-title">Add Estate Item</h2>
+            <form id="estate-form">
+                <input type="hidden" id="edit-id" value="">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="item_type">Item Type</label>
+                        <select id="item_type" name="item_type" required>
+                            <option value="">Select type…</option>
+                            <option value="Will">Will</option>
+                            <option value="Power of Attorney">Power of Attorney</option>
+                            <option value="Trust">Trust</option>
+                            <option value="Beneficiary Nomination">Beneficiary Nomination</option>
+                            <option value="Funeral Plan">Funeral Plan</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="status">Status</label>
+                        <select id="status" name="status" required>
+                            <option value="">Select status…</option>
+                            <option value="complete">Complete</option>
+                            <option value="pending">Pending</option>
+                            <option value="needs review">Needs Review</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="grid-column: 1 / -1">
+                        <label for="details">Details</label>
+                        <textarea id="details" name="details" placeholder="Additional notes about this item…"></textarea>
+                    </div>
+                    <div class="form-group" style="grid-column: 1 / -1">
+                        <label for="contact_info">Contact Info (solicitor, executor, etc.)</label>
+                        <input type="text" id="contact_info" name="contact_info" placeholder="e.g. John Smith, Smith & Co Solicitors, 020 1234 5678">
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">Save</button>
+                        <button type="button" class="btn btn-ghost" id="cancel-btn">Cancel</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Data Table -->
+        <div id="table-wrap">
+            <div class="empty-state" id="empty-state">
+                <p>No estate items yet.</p>
+                <button class="btn btn-primary" id="empty-add-btn">+ Add Your First Item</button>
+            </div>
+            <table class="data-table" id="data-table" style="display:none">
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Status</th>
+                        <th>Details</th>
+                        <th>Contact</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="estate.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/dashboard.html" class="brand">Financial Assistant</a>
+        <div id="nav-links" style="display:none">
+            <a href="/dashboard.html">Dashboard</a>
+            <a href="/income.html">Income</a>
+            <a href="/assets.html">Assets</a>
+            <a href="/liabilities.html">Liabilities</a>
+            <a href="/protection.html">Protection</a>
+            <a href="/estate.html">Estate</a>
+            <a href="/intangibles.html">Intangibles</a>
+            <a href="/api/logout" id="logout-link">Logout</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h1 class="welcome">Welcome back, <span id="username"></span></h1>
+        <div class="card-grid">
+            <div class="card"><h3>Income</h3><p>&mdash;</p></div>
+            <div class="card"><h3>Assets</h3><p>&mdash;</p></div>
+            <div class="card"><h3>Liabilities</h3><p>&mdash;</p></div>
+            <div class="card"><h3>Protection</h3><p>&mdash;</p></div>
+            <div class="card"><h3>Estate</h3><p>&mdash;</p></div>
+            <div class="card"><h3>Intangibles</h3><p>&mdash;</p></div>
+        </div>
+    </div>
+    <script src="dashboard.js"></script>
+</body>
+</html>

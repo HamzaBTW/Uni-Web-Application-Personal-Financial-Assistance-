@@ -1,58 +1,251 @@
-const express = require('express');
-const session = require('express-session');
+const http = require('http');
+const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
+const bcrypt = require('bcryptjs');
+const db = require('./database');
 
-const app = express();
-const PORT = 3000;
+const DEFAULT_PORT = Number(process.env.PORT) || 3000;
 
-// --- Middleware ---
+// Session store: sessionId -> { id, email, username }
+const sessions = new Map();
 
-// Parse form data
-app.use(express.urlencoded({ extended: false }));
+function getSessionId(req) {
+    const match = (req.headers.cookie || '').match(/(?:^|;\s*)sid=([^;]+)/);
+    return match ? match[1] : null;
+}
 
-// Serve static files (CSS, images, client JS)
-app.use(express.static(path.join(__dirname, 'public')));
+function getUser(req) {
+    const sid = getSessionId(req);
+    return sid ? sessions.get(sid) : null;
+}
 
-// Serve template assets (welcome.css, login.css, signup.css, etc.)
-app.use('/templates', express.static(path.join(__dirname, 'templates')));
-app.use(express.static(path.join(__dirname, 'templates', 'Welcome Page')));
+function serveFile(res, filePath) {
+    fs.readFile(filePath, (err, data) => {
+        if (err) { res.writeHead(404); return res.end('Not found'); }
+        const ext = path.extname(filePath).toLowerCase();
+        const types = { '.html': 'text/html', '.css': 'text/css', '.js': 'application/javascript', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.ico': 'image/x-icon' };
+        res.writeHead(200, { 'Content-Type': types[ext] || 'application/octet-stream' });
+        res.end(data);
+    });
+}
 
-// Session config
-app.use(session({
-    secret: 'finance-app-secret-key',
-    resave: false,
-    saveUninitialized: false,
-    cookie: { maxAge: 1000 * 60 * 60 * 2 } // 2 hours
-}));
+function readBody(req) {
+    return new Promise(resolve => { let b = ''; req.on('data', c => b += c); req.on('end', () => resolve(b)); });
+}
 
-// Make session user available in all EJS templates
-app.use((req, res, next) => {
-    res.locals.user = req.session.user || null;
-    next();
+function json(res, status, data) {
+    res.writeHead(status, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(data));
+}
+
+function redirect(res, location) {
+    res.writeHead(302, { 'Location': location });
+    res.end();
+}
+
+const server = http.createServer(async (req, res) => {
+    const { pathname } = new URL(req.url, `http://localhost:${DEFAULT_PORT}`);
+    const method = req.method;
+
+    // GET /api/me
+    if (pathname === '/api/me' && method === 'GET') {
+        const user = getUser(req);
+        return user ? json(res, 200, user) : json(res, 401, { error: 'Not logged in' });
+    }
+
+    // POST /api/login
+    if (pathname === '/api/login' && method === 'POST') {
+        const { email, password } = Object.fromEntries(new URLSearchParams(await readBody(req)));
+        const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
+        if (!user || !bcrypt.compareSync(password, user.password_hash)) {
+            return json(res, 401, { error: 'Invalid email or password.' });
+        }
+        const sid = crypto.randomBytes(32).toString('hex');
+        sessions.set(sid, { id: user.id, email: user.email, username: user.username });
+        res.writeHead(200, { 'Content-Type': 'application/json', 'Set-Cookie': `sid=${sid}; HttpOnly; Path=/; Max-Age=7200` });
+        return res.end(JSON.stringify({ success: true }));
+    }
+
+    // POST /api/signup
+    if (pathname === '/api/signup' && method === 'POST') {
+        const { email, username, password, confirm_password } = Object.fromEntries(new URLSearchParams(await readBody(req)));
+        if (!email || !username || !password || !confirm_password) return json(res, 400, { error: 'All fields are required.' });
+        if (password !== confirm_password) return json(res, 400, { error: 'Passwords do not match.' });
+        if (password.length < 6) return json(res, 400, { error: 'Password must be at least 6 characters.' });
+        if (db.prepare('SELECT id FROM users WHERE email = ?').get(email)) return json(res, 400, { error: 'Email already registered.' });
+        db.prepare('INSERT INTO users (email, username, password_hash) VALUES (?, ?, ?)').run(email, username, bcrypt.hashSync(password, 10));
+        return json(res, 200, { success: true });
+    }
+
+    // GET /api/logout
+    if (pathname === '/api/logout' && method === 'GET') {
+        const sid = getSessionId(req);
+        if (sid) sessions.delete(sid);
+        res.writeHead(302, { 'Set-Cookie': 'sid=; HttpOnly; Path=/; Max-Age=0', 'Location': '/auth.html' });
+        return res.end();
+    }
+
+    // ─── AUTH-GUARDED HELPER ───
+    function requireAuth() {
+        const user = getUser(req);
+        if (!user) { json(res, 401, { error: 'Not logged in' }); return null; }
+        return user;
+    }
+
+    // ─── GENERIC CRUD ───
+    function handleCrud(tableName) {
+        const base = `/api/${tableName}`;
+
+        // GET /api/{table} — list rows for logged-in user
+        if (pathname === base && method === 'GET') {
+            const user = requireAuth();
+            if (!user) return true;
+            const rows = db.prepare(`SELECT * FROM ${tableName} WHERE user_id = ? ORDER BY id DESC`).all(user.id);
+            json(res, 200, rows);
+            return true;
+        }
+
+        // POST /api/{table} — create row
+        if (pathname === base && method === 'POST') {
+            return 'create';
+        }
+
+        // POST /api/{table}/:id/edit
+        const editMatch = pathname.match(new RegExp(`^${base}/(\\d+)/edit$`));
+        if (editMatch && method === 'POST') {
+            return { action: 'edit', id: editMatch[1] };
+        }
+
+        // POST /api/{table}/:id/delete
+        const deleteMatch = pathname.match(new RegExp(`^${base}/(\\d+)/delete$`));
+        if (deleteMatch && method === 'POST') {
+            return { action: 'delete', id: deleteMatch[1] };
+        }
+
+        return false;
+    }
+
+    async function executeCrud(tableName, columns, match) {
+        const user = requireAuth();
+        if (!user) return;
+        const colNames = columns.map(c => c.name);
+
+        if (match === 'create') {
+            const fields = Object.fromEntries(new URLSearchParams(await readBody(req)));
+            const placeholders = colNames.map(() => '?').join(', ');
+            const values = colNames.map(c => fields[c] || null);
+            db.prepare(`INSERT INTO ${tableName} (user_id, ${colNames.join(', ')}) VALUES (?, ${placeholders})`).run(user.id, ...values);
+            return json(res, 200, { success: true });
+        }
+
+        if (match.action === 'edit') {
+            const fields = Object.fromEntries(new URLSearchParams(await readBody(req)));
+            const sets = colNames.map(c => `${c} = ?`).join(', ');
+            const values = colNames.map(c => fields[c] || null);
+            db.prepare(`UPDATE ${tableName} SET ${sets} WHERE id = ? AND user_id = ?`).run(...values, match.id, user.id);
+            return json(res, 200, { success: true });
+        }
+
+        if (match.action === 'delete') {
+            db.prepare(`DELETE FROM ${tableName} WHERE id = ? AND user_id = ?`).run(match.id, user.id);
+            return json(res, 200, { success: true });
+        }
+    }
+
+    // ─── PROTECTION CRUD ───
+    const protectionCols = [
+        { name: 'policy_type' }, { name: 'provider' }, { name: 'premium' },
+        { name: 'start_date' }, { name: 'renewal_date' }
+    ];
+    const protectionMatch = handleCrud('protection');
+    if (protectionMatch === true) return;
+    if (protectionMatch) return executeCrud('protection', protectionCols, protectionMatch);
+
+    // ─── ESTATE CRUD ───
+    const estateCols = [
+        { name: 'item_type' }, { name: 'status' }, { name: 'details' },
+        { name: 'contact_info' }
+    ];
+    const estateMatch = handleCrud('estate');
+    if (estateMatch === true) return;
+    if (estateMatch) return executeCrud('estate', estateCols, estateMatch);
+
+    // ─── DASHBOARD AGGREGATES ───
+    if (pathname === '/api/dashboard' && method === 'GET') {
+        const user = requireAuth();
+        if (!user) return;
+
+        const totalIncome = db.prepare(`SELECT COALESCE(SUM(
+            CASE frequency WHEN 'weekly' THEN amount * 52 WHEN 'monthly' THEN amount * 12 WHEN 'annual' THEN amount ELSE amount END
+        ), 0) AS total FROM income WHERE user_id = ?`).get(user.id).total;
+
+        const totalAssets = db.prepare('SELECT COALESCE(SUM(value), 0) AS total FROM assets WHERE user_id = ?').get(user.id).total;
+        const totalLiabilities = db.prepare('SELECT COALESCE(SUM(balance), 0) AS total FROM liabilities WHERE user_id = ?').get(user.id).total;
+        const protectionCount = db.prepare('SELECT COUNT(*) AS count FROM protection WHERE user_id = ?').get(user.id).count;
+
+        const estateRow = db.prepare(`SELECT COUNT(*) AS total,
+            SUM(CASE WHEN status = 'complete' THEN 1 ELSE 0 END) AS completed
+            FROM estate WHERE user_id = ?`).get(user.id);
+
+        const avgIntangible = db.prepare('SELECT COALESCE(AVG(score), 0) AS avg FROM intangibles WHERE user_id = ?').get(user.id).avg;
+
+        return json(res, 200, {
+            income: totalIncome,
+            assets: totalAssets,
+            liabilities: totalLiabilities,
+            netWorth: totalAssets - totalLiabilities,
+            protectionPolicies: protectionCount,
+            estateTotal: estateRow.total,
+            estateCompleted: estateRow.completed,
+            intangibleAvg: Math.round(avgIntangible * 10) / 10
+        });
+    }
+
+    // Convenience redirects
+    if (pathname === '/') return redirect(res, '/welcome.html');
+    if (pathname === '/login' || pathname === '/signup') return redirect(res, '/auth.html');
+    if (pathname === '/dashboard') return redirect(res, '/dashboard.html');
+    if (pathname === '/logout') return redirect(res, '/api/logout');
+
+    // Static files — check /public, then each templates subfolder, then /templates root
+    const stripped = pathname.replace(/^\//, '');
+    const candidates = [
+        path.join(__dirname, 'public', stripped),
+        path.join(__dirname, 'templates', 'Welcome Page', stripped),
+        path.join(__dirname, 'templates', 'Auth', stripped),
+        path.join(__dirname, 'templates', 'Dashboard', stripped),
+        path.join(__dirname, 'templates', 'Protection', stripped),
+        path.join(__dirname, 'templates', 'Estate', stripped),
+        path.join(__dirname, 'templates', stripped),
+    ];
+    for (const f of candidates) {
+        if (fs.statSync(f, { throwIfNoEntry: false })?.isFile()) return serveFile(res, f);
+    }
+
+    res.writeHead(404);
+    res.end('Not found');
 });
 
-// View engine
-app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views'));
+let currentPort = DEFAULT_PORT;
+let retryCount = 0;
+const MAX_PORT_RETRIES = 10;
 
-// --- Routes ---
-
-const authRoutes = require('./routes/auth');
-app.use(authRoutes);
-
-// Public landing page
-app.get('/', (req, res) => {
-    if (req.session.user) return res.redirect('/dashboard');
-    res.sendFile(path.join(__dirname, 'templates', 'Welcome Page', 'welcome.html'));
+server.on('listening', () => {
+    const address = server.address();
+    if (address && typeof address === 'object') {
+        console.log(`Server running at http://localhost:${address.port}`);
+    }
 });
 
-// Dashboard (protected)
-app.get('/dashboard', (req, res) => {
-    if (!req.session.user) return res.redirect('/login');
-    res.render('dashboard', { title: 'Dashboard' });
+server.on('error', (err) => {
+    if (err.code === 'EADDRINUSE' && retryCount < MAX_PORT_RETRIES) {
+        console.warn(`Port ${currentPort} is busy, trying ${currentPort + 1}...`);
+        currentPort += 1;
+        retryCount += 1;
+        return server.listen(currentPort);
+    }
+    throw err;
 });
 
-// --- Start server ---
-app.listen(PORT, () => {
-    console.log(`Server running at http://localhost:${PORT}`);
-});
+server.listen(currentPort);
