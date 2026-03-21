@@ -345,7 +345,6 @@ const server = http.createServer(async (req, res) => {
     const candidates = [
         path.join(__dirname, 'public', stripped),
         path.join(__dirname, 'templates', 'Welcome_Page', stripped),
-        path.join(__dirname, 'templates', 'Welcome Page', stripped),
         path.join(__dirname, 'templates', 'Auth', stripped),
         path.join(__dirname, 'templates', 'Dashboard', stripped),
         path.join(__dirname, 'templates', 'Assets', stripped),
