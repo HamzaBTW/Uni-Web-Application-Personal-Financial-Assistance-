@@ -287,6 +287,22 @@ const server = http.createServer(async (req, res) => {
     if (estateMatch === true) return;
     if (estateMatch) return executeCrud('estate', estateCols, estateMatch);
 
+    // ─── ASSETS CRUD ───
+    const assetCols = [
+        { name: 'category' }, { name: 'description' }, { name: 'value' }
+    ];
+    const assetMatch = handleCrud('assets');
+    if (assetMatch === true) return;
+    if (assetMatch) return executeCrud('assets', assetCols, assetMatch);
+
+    // ─── LIABILITIES CRUD ───
+    const liabilityCols = [
+        { name: 'category' }, { name: 'description' }, { name: 'balance' }, { name: 'interest_rate' }
+    ];
+    const liabilityMatch = handleCrud('liabilities');
+    if (liabilityMatch === true) return;
+    if (liabilityMatch) return executeCrud('liabilities', liabilityCols, liabilityMatch);
+
     // ─── DASHBOARD AGGREGATES ───
     if (pathname === '/api/dashboard' && method === 'GET') {
         const user = requireAuth();
@@ -331,6 +347,8 @@ const server = http.createServer(async (req, res) => {
         path.join(__dirname, 'templates', 'Welcome Page', stripped),
         path.join(__dirname, 'templates', 'Auth', stripped),
         path.join(__dirname, 'templates', 'Dashboard', stripped),
+        path.join(__dirname, 'templates', 'Assets', stripped),
+        path.join(__dirname, 'templates', 'Liabilities', stripped),
         path.join(__dirname, 'templates', 'Protection', stripped),
         path.join(__dirname, 'templates', 'Estate', stripped),
         path.join(__dirname, 'templates', stripped),

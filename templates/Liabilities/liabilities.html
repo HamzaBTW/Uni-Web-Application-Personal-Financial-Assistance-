@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liabilities</title>
+    <link rel="stylesheet" href="liabilities.css">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/dashboard.html" class="brand">Financial Assistant</a>
+        <div id="nav-links" style="display:none">
+            <a href="/dashboard.html">Dashboard</a>
+            <a href="/income.html">Income</a>
+            <a href="/assets.html">Assets</a>
+            <a href="/liabilities.html" class="active">Liabilities</a>
+            <a href="/protection.html">Protection</a>
+            <a href="/estate.html">Estate</a>
+            <a href="/intangibles.html">Intangibles</a>
+            <a href="/api/logout" id="logout-link">Logout</a>
+        </div>
+    </nav>
+
+    <main class="container">
+        <h1 class="page-title">Liabilities</h1>
+        <p class="subtitle">Welcome, <span id="username"></span>. Keep debt and obligations visible and under control.</p>
+
+        <section class="stats-grid">
+            <article class="stat-card">
+                <h2>Total Liabilities</h2>
+                <p id="total-liabilities">&pound;0</p>
+            </article>
+            <article class="stat-card">
+                <h2>Debt-to-Asset Ratio</h2>
+                <p id="debt-ratio">0%</p>
+            </article>
+        </section>
+
+        <section class="panel">
+            <h2>Add Liability</h2>
+            <form id="liability-form" class="form-grid">
+                <label>
+                    Category
+                    <select name="category" required>
+                        <option value="">Select category</option>
+                        <option value="Mortgage balances">Mortgage balances</option>
+                        <option value="Student loans">Student loans</option>
+                        <option value="Credit card debt">Credit card debt</option>
+                        <option value="Personal loans & car finance">Personal loans & car finance</option>
+                        <option value="Outstanding bills / overdrafts">Outstanding bills / overdrafts</option>
+                    </select>
+                </label>
+
+                <label>
+                    Description
+                    <input type="text" name="description" maxlength="120" placeholder="e.g. Barclaycard" required>
+                </label>
+
+                <label>
+                    Balance (GBP)
+                    <input type="number" name="balance" min="0" step="0.01" placeholder="0.00" required>
+                </label>
+
+                <label>
+                    Interest rate (%)
+                    <input type="number" name="interest_rate" min="0" step="0.01" placeholder="0.00">
+                </label>
+
+                <button type="submit">Add Liability</button>
+            </form>
+            <p id="liability-message" class="message" aria-live="polite"></p>
+        </section>
+
+        <section class="panel">
+            <h2>Liability Breakdown</h2>
+            <div id="liability-breakdown" class="category-grid"></div>
+        </section>
+
+        <section class="panel">
+            <h2>Debt Register</h2>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Description</th>
+                            <th>Balance</th>
+                            <th>Interest</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="liability-rows">
+                        <tr><td colspan="5" class="empty">No liabilities added yet.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script src="liabilities.js"></script>
+</body>
+</html>
