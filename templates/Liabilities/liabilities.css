@@ -79,6 +79,29 @@ a:hover { text-decoration: underline; }
   margin-bottom: 24px;
 }
 
+.currency-panel {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.currency-panel label {
+  font-size: 0.85rem;
+  color: #aaa;
+}
+
+.currency-panel select {
+  min-width: 150px;
+  max-width: 220px;
+}
+
+.fx-note {
+  margin-bottom: 18px;
+  color: #9c9c9c;
+  font-size: 0.84rem;
+}
+
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(220px, 1fr));

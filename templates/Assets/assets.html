@@ -25,10 +25,24 @@
         <h1 class="page-title">Assets</h1>
         <p class="subtitle">Welcome, <span id="username"></span>. Track all wealth-building assets in one place.</p>
 
+        <section class="currency-panel">
+            <label for="currency-select">Display Currency</label>
+            <select id="currency-select" name="currency">
+                <option value="USD" selected>USD ($)</option>
+                <option value="GBP">GBP (&pound;)</option>
+                <option value="EUR">EUR (&euro;)</option>
+                <option value="INR">INR (&#8377;)</option>
+                <option value="CAD">CAD ($)</option>
+                <option value="AUD">AUD ($)</option>
+                <option value="AED">AED (DH)</option>
+            </select>
+        </section>
+        <p class="fx-note" id="fx-note">Loading conversion rates...</p>
+
         <section class="stats-grid">
             <article class="stat-card">
                 <h2>Total Asset Valuation</h2>
-                <p id="total-assets">&pound;0</p>
+                <p id="total-assets">$0.00</p>
             </article>
             <article class="stat-card">
                 <h2>Total Asset Items</h2>
@@ -57,7 +71,7 @@
                 </label>
 
                 <label>
-                    Value (GBP)
+                    <span id="value-label">Value (USD)</span>
                     <input type="number" name="value" min="0" step="0.01" placeholder="0.00" required>
                 </label>
 
