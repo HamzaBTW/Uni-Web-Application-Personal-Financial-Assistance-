@@ -45,9 +45,9 @@ body {
 }
 
 .nav-brand-logo {
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
+  width: 56px;
+  height: 56px;
+  object-fit: contain;
   flex-shrink: 0;
 }
 

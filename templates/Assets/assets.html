@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assets</title>
+    <link rel="stylesheet" href="assets.css">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/dashboard.html" class="brand">Financial Assistant</a>
+        <div id="nav-links" style="display:none">
+            <a href="/dashboard.html">Dashboard</a>
+            <a href="/income.html">Income</a>
+            <a href="/assets.html" class="active">Assets</a>
+            <a href="/liabilities.html">Liabilities</a>
+            <a href="/protection.html">Protection</a>
+            <a href="/estate.html">Estate</a>
+            <a href="/intangibles.html">Intangibles</a>
+            <a href="/api/logout" id="logout-link">Logout</a>
+        </div>
+    </nav>
+
+    <main class="container">
+        <h1 class="page-title">Assets</h1>
+        <p class="subtitle">Welcome, <span id="username"></span>. Track all wealth-building assets in one place.</p>
+
+        <section class="stats-grid">
+            <article class="stat-card">
+                <h2>Total Asset Valuation</h2>
+                <p id="total-assets">&pound;0</p>
+            </article>
+            <article class="stat-card">
+                <h2>Total Asset Items</h2>
+                <p id="asset-count">0</p>
+            </article>
+        </section>
+
+        <section class="panel">
+            <h2>Add Asset</h2>
+            <form id="asset-form" class="form-grid">
+                <label>
+                    Category
+                    <select name="category" required>
+                        <option value="">Select category</option>
+                        <option value="Cash & savings">Cash & savings</option>
+                        <option value="Investments">Investments</option>
+                        <option value="Property">Property</option>
+                        <option value="Vehicles">Vehicles</option>
+                        <option value="Valuables">Valuables</option>
+                    </select>
+                </label>
+
+                <label>
+                    Description
+                    <input type="text" name="description" maxlength="120" placeholder="e.g. Emergency fund" required>
+                </label>
+
+                <label>
+                    Value (GBP)
+                    <input type="number" name="value" min="0" step="0.01" placeholder="0.00" required>
+                </label>
+
+                <button type="submit">Add Asset</button>
+            </form>
+            <p id="asset-message" class="message" aria-live="polite"></p>
+        </section>
+
+        <section class="panel">
+            <h2>Category Breakdown</h2>
+            <div id="category-breakdown" class="category-grid"></div>
+        </section>
+
+        <section class="panel">
+            <h2>Asset Catalogue</h2>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Description</th>
+                            <th>Value</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="asset-rows">
+                        <tr><td colspan="4" class="empty">No assets added yet.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script src="assets.js"></script>
+</body>
+</html>
