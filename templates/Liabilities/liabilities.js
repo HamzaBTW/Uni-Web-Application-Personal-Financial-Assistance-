@@ -6,8 +6,43 @@ const liabilityCategories = [
     'Outstanding bills / overdrafts'
 ];
 
-function formatGBP(value) {
-    return '\u00A3' + Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const supportedCurrencies = ['USD', 'GBP', 'EUR', 'INR', 'CAD', 'AUD', 'AED'];
+const defaultRates = {
+    USD: 1,
+    GBP: 0.78,
+    EUR: 0.92,
+    INR: 83.2,
+    CAD: 1.35,
+    AUD: 1.52,
+    AED: 3.67,
+};
+let selectedCurrency = 'USD';
+let cachedLiabilityRows = [];
+let cachedAssetTotal = 0;
+let exchangeRates = { ...defaultRates };
+let exchangeSource = 'fallback';
+let exchangeUpdatedAt = null;
+
+function rateFor(currencyCode) {
+    const rate = Number(exchangeRates[currencyCode]);
+    return Number.isFinite(rate) && rate > 0 ? rate : 1;
+}
+
+function convertUsdToSelected(valueInUsd) {
+    return Number(valueInUsd || 0) * rateFor(selectedCurrency);
+}
+
+function convertSelectedToUsd(valueInSelectedCurrency) {
+    return Number(valueInSelectedCurrency || 0) / rateFor(selectedCurrency);
+}
+
+function formatCurrency(valueInUsd) {
+    return new Intl.NumberFormat(undefined, {
+        style: 'currency',
+        currency: selectedCurrency,
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    }).format(convertUsdToSelected(valueInUsd));
 }
 
 function formatPercent(value) {
@@ -53,7 +88,7 @@ function renderRows(rows) {
         return `<tr>
             <td>${escapeHtml(row.category)}</td>
             <td>${escapeHtml(row.description)}</td>
-            <td>${formatGBP(row.balance)}</td>
+            <td>${formatCurrency(row.balance)}</td>
             <td>${interest}</td>
             <td><button class="action-btn" data-id="${Number(row.id)}">Delete</button></td>
         </tr>`;
@@ -75,7 +110,7 @@ function renderBreakdown(rows) {
     }
 
     breakdownEl.innerHTML = liabilityCategories
-        .map((category) => `<div class="category-chip"><strong>${escapeHtml(category)}</strong><span>${formatGBP(totals[category])}</span></div>`)
+        .map((category) => `<div class="category-chip"><strong>${escapeHtml(category)}</strong><span>${formatCurrency(totals[category])}</span></div>`)
         .join('');
 }
 
@@ -93,11 +128,65 @@ async function fetchDashboardTotals() {
     return response.json();
 }
 
+async function fetchExchangeRates() {
+    const response = await fetch('/api/exchange-rates');
+    if (!response.ok) return;
+
+    const payload = await response.json();
+    if (!payload || !payload.rates) return;
+
+    const nextRates = {};
+    for (const code of supportedCurrencies) {
+        const candidate = Number(payload.rates[code]);
+        if (!Number.isFinite(candidate) || candidate <= 0) return;
+        nextRates[code] = candidate;
+    }
+
+    exchangeRates = nextRates;
+    exchangeSource = payload.source || 'live';
+    exchangeUpdatedAt = payload.updatedAt || null;
+}
+
 function setMessage(message, isError = false) {
     const messageEl = document.getElementById('liability-message');
     if (!messageEl) return;
     messageEl.textContent = message;
     messageEl.style.color = isError ? '#ff7a7a' : '#7be28c';
+}
+
+function updateBalanceLabel() {
+    const balanceLabel = document.getElementById('balance-label');
+    if (balanceLabel) balanceLabel.textContent = `Balance (${selectedCurrency})`;
+}
+
+function renderFxNote() {
+    const fxNoteEl = document.getElementById('fx-note');
+    if (!fxNoteEl) return;
+
+    const parts = supportedCurrencies
+        .filter(code => code !== 'USD')
+        .map(code => `${code} ${rateFor(code).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}`);
+
+    const sourceText = exchangeSource === 'live' ? 'Live rates' : 'Fallback rates';
+    const timeText = exchangeUpdatedAt ? ` at ${new Date(exchangeUpdatedAt).toLocaleTimeString()}` : '';
+    fxNoteEl.textContent = `${sourceText}${timeText}: 1 USD = ${parts.join(' | ')}`;
+}
+
+function renderTotals() {
+    const total = cachedLiabilityRows.reduce((sum, row) => sum + Number(row.balance || 0), 0);
+    const totalLiabilitiesEl = document.getElementById('total-liabilities');
+    const ratioEl = document.getElementById('debt-ratio');
+
+    if (totalLiabilitiesEl) totalLiabilitiesEl.textContent = formatCurrency(total);
+
+    const ratio = cachedAssetTotal > 0 ? (total / cachedAssetTotal) * 100 : 0;
+    if (ratioEl) ratioEl.textContent = cachedAssetTotal > 0 ? formatPercent(ratio) : 'N/A';
+}
+
+function rerenderFromCache() {
+    renderTotals();
+    renderBreakdown(cachedLiabilityRows);
+    renderRows(cachedLiabilityRows);
 }
 
 async function createLiability(formData) {
@@ -116,19 +205,9 @@ async function deleteLiability(id) {
 
 async function refreshLiabilities() {
     const [rows, dashboard] = await Promise.all([fetchLiabilities(), fetchDashboardTotals()]);
-    const total = rows.reduce((sum, row) => sum + Number(row.balance || 0), 0);
-
-    const totalLiabilitiesEl = document.getElementById('total-liabilities');
-    const ratioEl = document.getElementById('debt-ratio');
-
-    if (totalLiabilitiesEl) totalLiabilitiesEl.textContent = formatGBP(total);
-
-    const assetsTotal = Number(dashboard.assets || 0);
-    const ratio = assetsTotal > 0 ? (total / assetsTotal) * 100 : 0;
-    if (ratioEl) ratioEl.textContent = assetsTotal > 0 ? formatPercent(ratio) : 'N/A';
-
-    renderBreakdown(rows);
-    renderRows(rows);
+    cachedLiabilityRows = rows;
+    cachedAssetTotal = Number(dashboard.assets || 0);
+    rerenderFromCache();
 }
 
 async function initLiabilitiesPage() {
@@ -138,6 +217,22 @@ async function initLiabilitiesPage() {
 
         const form = document.getElementById('liability-form');
         const tbody = document.getElementById('liability-rows');
+        const currencySelect = document.getElementById('currency-select');
+
+        if (currencySelect instanceof HTMLSelectElement) {
+            const current = currencySelect.value;
+            selectedCurrency = supportedCurrencies.includes(current) ? current : 'USD';
+            currencySelect.addEventListener('change', () => {
+                const next = currencySelect.value;
+                selectedCurrency = supportedCurrencies.includes(next) ? next : 'USD';
+                updateBalanceLabel();
+                rerenderFromCache();
+            });
+        }
+
+        await fetchExchangeRates();
+        updateBalanceLabel();
+        renderFxNote();
 
         await refreshLiabilities();
 
@@ -147,6 +242,7 @@ async function initLiabilitiesPage() {
                 setMessage('Saving...');
                 try {
                     const formData = Object.fromEntries(new FormData(form).entries());
+                    formData.balance = String(convertSelectedToUsd(formData.balance));
                     await createLiability(formData);
                     form.reset();
                     await refreshLiabilities();

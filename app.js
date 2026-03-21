@@ -1,4 +1,5 @@
 const http = require('http');
+const https = require('https');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
@@ -9,6 +10,21 @@ const db = require('./database');
 const DEFAULT_PORT = Number(process.env.PORT) || 3000;
 const MAX_BODY_SIZE = 1024 * 100; // 100 KB
 const ALLOWED_TABLES = new Set(['protection', 'estate', 'income', 'assets', 'liabilities', 'intangibles']);
+const SUPPORTED_CURRENCIES = ['USD', 'GBP', 'EUR', 'INR', 'CAD', 'AUD', 'AED'];
+const FALLBACK_RATES = {
+    USD: 1,
+    GBP: 0.78,
+    EUR: 0.92,
+    INR: 83.2,
+    CAD: 1.35,
+    AUD: 1.52,
+    AED: 3.67,
+};
+
+let exchangeRatesCache = {
+    expiresAt: 0,
+    payload: null,
+};
 
 // Session store: sessionId -> { id, email, username }
 const sessions = new Map();
@@ -82,6 +98,76 @@ function json(res, status, data) {
 function redirect(res, location) {
     res.writeHead(302, { 'Location': location, ...securityHeaders() });
     res.end();
+}
+
+function fetchLiveUsdRates() {
+    return new Promise((resolve, reject) => {
+        const req = https.get('https://open.er-api.com/v6/latest/USD', (response) => {
+            let body = '';
+            response.on('data', chunk => body += chunk);
+            response.on('end', () => {
+                try {
+                    if (response.statusCode !== 200) {
+                        return reject(new Error(`Exchange API status ${response.statusCode}`));
+                    }
+
+                    const parsed = JSON.parse(body);
+                    if (parsed.result !== 'success' || !parsed.rates) {
+                        return reject(new Error('Exchange API returned invalid payload'));
+                    }
+
+                    const rates = {};
+                    for (const code of SUPPORTED_CURRENCIES) {
+                        const value = code === 'USD' ? 1 : Number(parsed.rates[code]);
+                        if (!Number.isFinite(value) || value <= 0) {
+                            return reject(new Error(`Missing exchange rate for ${code}`));
+                        }
+                        rates[code] = value;
+                    }
+
+                    resolve({
+                        base: 'USD',
+                        rates,
+                        source: 'live',
+                        updatedAt: new Date().toISOString(),
+                    });
+                } catch (err) {
+                    reject(err);
+                }
+            });
+        });
+
+        req.on('error', reject);
+        req.setTimeout(5000, () => req.destroy(new Error('Exchange API timeout')));
+    });
+}
+
+async function getExchangeRates() {
+    const now = Date.now();
+    if (exchangeRatesCache.payload && now < exchangeRatesCache.expiresAt) {
+        return exchangeRatesCache.payload;
+    }
+
+    try {
+        const live = await fetchLiveUsdRates();
+        exchangeRatesCache = {
+            payload: live,
+            expiresAt: now + 60 * 60 * 1000,
+        };
+        return live;
+    } catch (err) {
+        const fallback = {
+            base: 'USD',
+            rates: { ...FALLBACK_RATES },
+            source: 'fallback',
+            updatedAt: new Date().toISOString(),
+        };
+        exchangeRatesCache = {
+            payload: fallback,
+            expiresAt: now + 10 * 60 * 1000,
+        };
+        return fallback;
+    }
 }
 
 const server = http.createServer(async (req, res) => {
@@ -186,6 +272,13 @@ const server = http.createServer(async (req, res) => {
         const user = getUser(req);
         if (!user) { json(res, 401, { error: 'Not logged in' }); return null; }
         return user;
+    }
+
+    if (pathname === '/api/exchange-rates' && method === 'GET') {
+        const user = requireAuth();
+        if (!user) return;
+        const rates = await getExchangeRates();
+        return json(res, 200, rates);
     }
 
     // ─── GENERIC CRUD ───
