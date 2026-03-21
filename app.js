@@ -51,7 +51,7 @@ function serveFile(res, filePath) {
     fs.readFile(filePath, (err, data) => {
         if (err) { res.writeHead(404, { ...securityHeaders() }); return res.end('Not found'); }
         const ext = path.extname(filePath).toLowerCase();
-        const types = { '.html': 'text/html', '.css': 'text/css', '.js': 'application/javascript', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml', '.ico': 'image/x-icon' };
+        const types = { '.html': 'text/html', '.css': 'text/css', '.js': 'application/javascript', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.svg': 'image/svg+xml', '.ico': 'image/x-icon' };
         res.writeHead(200, { 'Content-Type': types[ext] || 'application/octet-stream', ...securityHeaders() });
         res.end(data);
     });
@@ -344,6 +344,7 @@ const server = http.createServer(async (req, res) => {
     const stripped = pathname.replace(/^\//, '');
     const candidates = [
         path.join(__dirname, 'public', stripped),
+        path.join(__dirname, 'templates', 'Welcome_Page', stripped),
         path.join(__dirname, 'templates', 'Welcome Page', stripped),
         path.join(__dirname, 'templates', 'Auth', stripped),
         path.join(__dirname, 'templates', 'Dashboard', stripped),
