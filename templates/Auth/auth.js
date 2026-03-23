@@ -1,9 +1,17 @@
+function setActiveAuthTab(target) {
+    const safeTarget = target === 'signup' ? 'signup' : 'login';
+    document.querySelectorAll('.auth-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === safeTarget));
+    document.querySelectorAll('.auth-panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + safeTarget));
+}
+
+const initialTab = new URLSearchParams(window.location.search).get('tab');
+setActiveAuthTab(initialTab);
+
 document.querySelectorAll('.auth-tab, [data-switch]').forEach(el => {
     el.addEventListener('click', (e) => {
         e.preventDefault();
         const target = el.dataset.tab || el.dataset.switch;
-        document.querySelectorAll('.auth-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === target));
-        document.querySelectorAll('.auth-panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + target));
+        setActiveAuthTab(target);
     });
 });
 

@@ -19,6 +19,17 @@ function esc(str) {
     const tableEl    = document.getElementById('data-table');
     const tbodyEl    = document.getElementById('table-body');
     const emptyEl    = document.getElementById('empty-state');
+    const startDateEl = document.getElementById('start_date');
+    const renewalDateEl = document.getElementById('renewal_date');
+    const MAX_DATE = '2080-12-31';
+
+    startDateEl.max = MAX_DATE;
+    renewalDateEl.max = MAX_DATE;
+
+    function isDateWithinLimit(v) {
+        if (!v) return true;
+        return /^\d{4}-\d{2}-\d{2}$/.test(v) && v <= MAX_DATE;
+    }
 
     function openForm(policy) {
         formPanel.classList.add('open');
@@ -77,6 +88,10 @@ function esc(str) {
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
+        if (!isDateWithinLimit(startDateEl.value) || !isDateWithinLimit(renewalDateEl.value)) {
+            alert('Dates must be valid and not beyond 2080-12-31.');
+            return;
+        }
         const body = new URLSearchParams(new FormData(form)).toString();
         const id = editIdEl.value;
         const url = id ? `/api/protection/${id}/edit` : '/api/protection';

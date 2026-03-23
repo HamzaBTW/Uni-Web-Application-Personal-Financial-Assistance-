@@ -12,3 +12,17 @@ const revealObserver = new IntersectionObserver((entries) => {
 }, { threshold: 0.12 });
 
 document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el));
+
+const navSignupBtn = document.getElementById('nav-signup-btn');
+if (navSignupBtn) {
+  navSignupBtn.addEventListener('click', () => {
+    window.location.href = '/auth.html?tab=signup';
+  });
+}
+
+const heroJourneyBtn = document.getElementById('hero-journey-btn');
+if (heroJourneyBtn) {
+  heroJourneyBtn.addEventListener('click', () => {
+    window.location.href = '/auth.html?tab=signup';
+  });
+}

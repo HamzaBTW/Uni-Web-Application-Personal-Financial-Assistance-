@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS users (
     email TEXT UNIQUE NOT NULL,
     username TEXT NOT NULL,
     password_hash TEXT NOT NULL,
+    preferred_currency TEXT NOT NULL DEFAULT 'GBP' CHECK (preferred_currency IN ('USD', 'GBP', 'EUR', 'INR', 'CAD', 'AUD', 'AED')),
     created_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
 

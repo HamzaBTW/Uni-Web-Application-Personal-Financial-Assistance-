@@ -58,17 +58,34 @@ function sanitizeInput(str) {
     return String(str).trim().replace(/<[^>]*>/g, '').substring(0, 1000);
 }
 
+function validateDateNB(value) {
+    if (value == null || value === '') return true;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+    return value <= '2080-12-31';
+}
+
+function isSupportedCurrency(code) {
+    return SUPPORTED_CURRENCIES.includes(code);
+}
+
 function getUser(req) {
     const sid = getSessionId(req);
     return sid ? sessions.get(sid) : null;
 }
 
-function serveFile(res, filePath) {
+function serveFile(res, filePath, options = {}) {
+    const { noStore = false } = options;
     fs.readFile(filePath, (err, data) => {
         if (err) { res.writeHead(404, { ...securityHeaders() }); return res.end('Not found'); }
         const ext = path.extname(filePath).toLowerCase();
         const types = { '.html': 'text/html', '.css': 'text/css', '.js': 'application/javascript', '.png': 'image/png', '.jpg': 'image/jpeg', '.webp': 'image/webp', '.svg': 'image/svg+xml', '.ico': 'image/x-icon' };
-        res.writeHead(200, { 'Content-Type': types[ext] || 'application/octet-stream', ...securityHeaders() });
+        const headers = { 'Content-Type': types[ext] || 'application/octet-stream', ...securityHeaders() };
+        if (noStore) {
+            headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, private';
+            headers['Pragma'] = 'no-cache';
+            headers['Expires'] = '0';
+        }
+        res.writeHead(200, headers);
         res.end(data);
     });
 }
@@ -196,7 +213,12 @@ const server = http.createServer(async (req, res) => {
             return json(res, 401, { error: 'Invalid email or password.' });
         }
         const sid = crypto.randomBytes(32).toString('hex');
-        sessions.set(sid, { id: user.id, email: user.email, username: user.username });
+        sessions.set(sid, {
+            id: user.id,
+            email: user.email,
+            username: user.username,
+            preferred_currency: isSupportedCurrency(user.preferred_currency) ? user.preferred_currency : 'GBP',
+        });
         res.writeHead(200, {
             'Content-Type': 'application/json',
             'Set-Cookie': buildSessionCookie(sid),
@@ -217,14 +239,16 @@ const server = http.createServer(async (req, res) => {
         const username = (fields.username || '').trim();
         const password = fields.password || '';
         const confirm_password = fields.confirm_password || '';
-        if (!email || !username || !password || !confirm_password) return json(res, 400, { error: 'All fields are required.' });
+        const preferred_currency = (fields.preferred_currency || '').trim().toUpperCase();
+        if (!email || !username || !password || !confirm_password || !preferred_currency) return json(res, 400, { error: 'All fields are required.' });
         if (password !== confirm_password) return json(res, 400, { error: 'Passwords do not match.' });
         if (password.length < 6) return json(res, 400, { error: 'Password must be at least 6 characters.' });
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) return json(res, 400, { error: 'Invalid email format.' });
         if (!/^[a-zA-Z0-9_ ]{2,30}$/.test(username)) return json(res, 400, { error: 'Username must be 2-30 characters (letters, numbers, spaces, underscores).' });
+        if (!isSupportedCurrency(preferred_currency)) return json(res, 400, { error: 'Invalid currency selection.' });
         if (db.prepare('SELECT id FROM users WHERE email = ?').get(email)) return json(res, 400, { error: 'Email already registered.' });
-        db.prepare('INSERT INTO users (email, username, password_hash) VALUES (?, ?, ?)').run(email, username, bcrypt.hashSync(password, 10));
+        db.prepare('INSERT INTO users (email, username, password_hash, preferred_currency) VALUES (?, ?, ?, ?)').run(email, username, bcrypt.hashSync(password, 10), preferred_currency);
         return json(res, 200, { success: true });
     }
 
@@ -234,7 +258,10 @@ const server = http.createServer(async (req, res) => {
         if (sid) sessions.delete(sid);
         res.writeHead(302, {
             'Set-Cookie': buildSessionCookie('', 0),
-            'Location': '/auth.html',
+            'Location': '/welcome.html',
+            'Cache-Control': 'no-store, no-cache, must-revalidate, private',
+            'Pragma': 'no-cache',
+            'Expires': '0',
             ...securityHeaders()
         });
         return res.end();
@@ -337,6 +364,13 @@ const server = http.createServer(async (req, res) => {
             } catch (err) {
                 return json(res, 413, { error: 'Request body too large.' });
             }
+            if (tableName === 'protection') {
+                const startDate = sanitizeInput(fields.start_date);
+                const renewalDate = sanitizeInput(fields.renewal_date);
+                if (!validateDateNB(startDate) || !validateDateNB(renewalDate)) {
+                    return json(res, 400, { error: 'Dates must be valid and not beyond 2080-12-31.' });
+                }
+            }
             const placeholders = colNames.map(() => '?').join(', ');
             const values = colNames.map(c => sanitizeInput(fields[c]));
             db.prepare(`INSERT INTO ${tableName} (user_id, ${colNames.join(', ')}) VALUES (?, ${placeholders})`).run(user.id, ...values);
@@ -349,6 +383,13 @@ const server = http.createServer(async (req, res) => {
                 fields = Object.fromEntries(new URLSearchParams(await readBody(req)));
             } catch (err) {
                 return json(res, 413, { error: 'Request body too large.' });
+            }
+            if (tableName === 'protection') {
+                const startDate = sanitizeInput(fields.start_date);
+                const renewalDate = sanitizeInput(fields.renewal_date);
+                if (!validateDateNB(startDate) || !validateDateNB(renewalDate)) {
+                    return json(res, 400, { error: 'Dates must be valid and not beyond 2080-12-31.' });
+                }
             }
             const sets = colNames.map(c => `${c} = ?`).join(', ');
             const values = colNames.map(c => sanitizeInput(fields[c]));
@@ -429,9 +470,25 @@ const server = http.createServer(async (req, res) => {
 
     // Convenience redirects
     if (pathname === '/') return redirect(res, '/welcome.html');
-    if (pathname === '/login' || pathname === '/signup') return redirect(res, '/auth.html');
+    if (pathname === '/login') return redirect(res, '/auth.html?tab=login');
+    if (pathname === '/signup') return redirect(res, '/auth.html?tab=signup');
     if (pathname === '/dashboard') return redirect(res, '/dashboard.html');
     if (pathname === '/logout') return redirect(res, '/api/logout');
+
+    const protectedPages = new Set([
+        '/dashboard.html',
+        '/income.html',
+        '/assets.html',
+        '/liabilities.html',
+        '/protection.html',
+        '/estate.html',
+        '/intangibles.html'
+    ]);
+
+    if (protectedPages.has(pathname)) {
+        const user = getUser(req);
+        if (!user) return redirect(res, '/welcome.html');
+    }
 
     // Static files — check /public, then each templates subfolder, then /templates root
     const stripped = pathname.replace(/^\//, '');
@@ -447,7 +504,9 @@ const server = http.createServer(async (req, res) => {
         path.join(__dirname, 'templates', stripped),
     ];
     for (const f of candidates) {
-        if (fs.statSync(f, { throwIfNoEntry: false })?.isFile()) return serveFile(res, f);
+        if (fs.statSync(f, { throwIfNoEntry: false })?.isFile()) {
+            return serveFile(res, f, { noStore: protectedPages.has(pathname) });
+        }
     }
 
     res.writeHead(404, { ...securityHeaders() });

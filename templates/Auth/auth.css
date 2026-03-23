@@ -174,7 +174,25 @@ body {
   outline: none;
 }
 
+.form-group select {
+  width: 100%;
+  padding: 12px 14px;
+  background: #1e1e1e;
+  border: 1px solid #333;
+  border-radius: 8px;
+  color: #e0e0e0;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.95rem;
+  transition: border-color 0.25s, box-shadow 0.25s;
+  outline: none;
+}
+
 .form-group input:focus {
+  border-color: #d42020;
+  box-shadow: 0 0 0 3px rgba(212,32,32,0.15);
+}
+
+.form-group select:focus {
   border-color: #d42020;
   box-shadow: 0 0 0 3px rgba(212,32,32,0.15);
 }
