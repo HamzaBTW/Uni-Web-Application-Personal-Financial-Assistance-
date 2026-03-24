@@ -1,3 +1,26 @@
+function initMobileNav() {
+    const navToggle = document.getElementById('nav-toggle');
+    const navLinks = document.getElementById('nav-links');
+
+    if (!navToggle || !navLinks) return;
+
+    navToggle.addEventListener('click', function () {
+        const isOpen = navLinks.classList.toggle('is-open');
+        navToggle.setAttribute('aria-expanded', String(isOpen));
+        navToggle.setAttribute('aria-label', isOpen ? 'Close navigation menu' : 'Open navigation menu');
+    });
+
+    navLinks.querySelectorAll('a').forEach(function (link) {
+        link.addEventListener('click', function () {
+            if (window.innerWidth <= 600) {
+                navLinks.classList.remove('is-open');
+                navToggle.setAttribute('aria-expanded', 'false');
+                navToggle.setAttribute('aria-label', 'Open navigation menu');
+            }
+        });
+    });
+}
+
 async function loadDashboard() {
     try {
         const meRes = await fetch('/api/me');
@@ -7,12 +30,10 @@ async function loadDashboard() {
         }
 
         const me = await meRes.json();
-    const currencyCode = me.preferred_currency || 'GBP';
+        const currencyCode = me.preferred_currency || 'GBP';
         const usernameEl = document.getElementById('username');
-        const navLinks = document.getElementById('nav-links');
 
         if (usernameEl) usernameEl.textContent = me.username || me.email || 'User';
-        if (navLinks) navLinks.style.display = 'flex';
 
         const dashRes = await fetch('/api/dashboard');
         if (!dashRes.ok) return;
@@ -32,4 +53,5 @@ async function loadDashboard() {
     }
 }
 
+initMobileNav();
 loadDashboard();

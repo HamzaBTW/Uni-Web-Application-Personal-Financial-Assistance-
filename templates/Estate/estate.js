@@ -6,11 +6,34 @@ function esc(str) {
     return d.innerHTML || '—';
 }
 
+function initMobileNav() {
+    const navToggle = document.getElementById('nav-toggle');
+    const navLinks = document.getElementById('nav-links');
+
+    if (!navToggle || !navLinks) return;
+
+    navToggle.addEventListener('click', function () {
+        const isOpen = navLinks.classList.toggle('is-open');
+        navToggle.setAttribute('aria-expanded', String(isOpen));
+        navToggle.setAttribute('aria-label', isOpen ? 'Close navigation menu' : 'Open navigation menu');
+    });
+
+    navLinks.querySelectorAll('a').forEach(function (link) {
+        link.addEventListener('click', function () {
+            if (window.innerWidth <= 600) {
+                navLinks.classList.remove('is-open');
+                navToggle.setAttribute('aria-expanded', 'false');
+                navToggle.setAttribute('aria-label', 'Open navigation menu');
+            }
+        });
+    });
+}
+
 (async () => {
     // ─── Auth guard ───
     const me = await fetch('/api/me').then(r => r.json()).catch(() => null);
     if (!me || me.error) return window.location.href = '/auth.html';
-    document.getElementById('nav-links').style.display = 'flex';
+    initMobileNav();
 
     const formPanel  = document.getElementById('form-panel');
     const formTitle  = document.getElementById('form-title');

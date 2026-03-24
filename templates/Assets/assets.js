@@ -53,6 +53,29 @@ function escapeHtml(text) {
         .replace(/'/g, '&#39;');
 }
 
+function initMobileNav() {
+    const navToggle = document.getElementById('nav-toggle');
+    const navLinks = document.getElementById('nav-links');
+
+    if (!navToggle || !navLinks) return;
+
+    navToggle.addEventListener('click', function () {
+        const isOpen = navLinks.classList.toggle('is-open');
+        navToggle.setAttribute('aria-expanded', String(isOpen));
+        navToggle.setAttribute('aria-label', isOpen ? 'Close navigation menu' : 'Open navigation menu');
+    });
+
+    navLinks.querySelectorAll('a').forEach(function (link) {
+        link.addEventListener('click', function () {
+            if (window.innerWidth <= 600) {
+                navLinks.classList.remove('is-open');
+                navToggle.setAttribute('aria-expanded', 'false');
+                navToggle.setAttribute('aria-label', 'Open navigation menu');
+            }
+        });
+    });
+}
+
 async function requireUser() {
     const response = await fetch('/api/me');
     if (!response.ok) {
@@ -62,10 +85,7 @@ async function requireUser() {
 
     const me = await response.json();
     const usernameEl = document.getElementById('username');
-    const navLinks = document.getElementById('nav-links');
-
     if (usernameEl) usernameEl.textContent = me.username || me.email || 'User';
-    if (navLinks) navLinks.style.display = 'flex';
     return me;
 }
 
@@ -260,4 +280,5 @@ async function initAssetsPage() {
     }
 }
 
+initMobileNav();
 initAssetsPage();
