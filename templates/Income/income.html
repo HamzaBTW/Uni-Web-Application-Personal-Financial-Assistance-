@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Income</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="income_style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/dashboard.html" class="brand">Financial Assistant</a>
+        <div id="nav-links">
+            <a href="/dashboard.html">Dashboard</a>
+            <a href="/income.html" class="active">Income</a>
+            <a href="/assets.html">Assets</a>
+            <a href="/liabilities.html">Liabilities</a>
+            <a href="/protection.html">Protection</a>
+            <a href="/estate.html">Estate</a>
+            <a href="/Intangibles.html">Intangibles</a>
+            <a href="/api/logout" id="logout-link">Logout</a>
+        </div>
+    </nav>
+
+    <main class="container">
+        <h1 class="page-title">Income</h1>
+        <p class="subtitle">Welcome, <span id="username"></span>. Track and analyze your income sources with tax calculations and currency conversions.</p>
+
+        <!-- Display Currency Selector -->
+        <section class="currency-selector-section">
+            <label for="displayCurrencySelect">View All Data In:</label>
+            <select id="displayCurrencySelect" onchange="changeDisplayCurrency(this.value)">
+                <option value="USD">USD</option>
+                <option value="EUR">EUR</option>
+                <option value="GBP">GBP</option>
+                <option value="CAD">CAD</option>
+                <option value="AUD">AUD</option>
+                <option value="INR">INR</option>
+                <option value="AED">AED</option>
+            </select>
+        </section>
+
+        <!-- Charts Section -->
+        <section class="charts-section" id="chartsSection" style="display: none;">
+            <!-- Income Distribution Chart -->
+            <article class="chart-card">
+                <h3>Income Distribution</h3>
+                <figure class="chart-container">
+                    <canvas id="incomeChart"></canvas>
+                </figure>
+                <aside class="chart-legend" id="incomeLegend"></aside>
+            </article>
+
+            <!-- Tax Breakdown Chart -->
+            <article class="chart-card">
+                <h3>Tax vs Net Income</h3>
+                <figure class="chart-container">
+                    <canvas id="taxChart"></canvas>
+                </figure>
+                <aside class="chart-legend" id="taxLegend"></aside>
+            </article>
+
+            <!-- Income by Source Chart -->
+            <article class="chart-card">
+                <h3>Income by Source</h3>
+                <figure class="chart-container">
+                    <canvas id="currencyChart"></canvas>
+                </figure>
+                <aside class="chart-legend" id="currencyLegend"></aside>
+            </article>
+
+            <!-- Tax Rate Comparison Chart -->
+            <article class="chart-card">
+                <h3>Tax Rate Analysis</h3>
+                <figure class="chart-container">
+                    <canvas id="taxRateChart"></canvas>
+                </figure>
+                <aside class="chart-legend" id="taxRateLegend"></aside>
+            </article>
+        </section>
+
+        <!-- Income Management Panel -->
+        <section class="panel">
+            <h2>Income Management</h2>
+            <p class="panel-description">Add and manage your various income sources. The system will automatically calculate taxes and provide insights.</p>
+
+            <form class="income-form" id="incomeForm">
+                <div class="form-grid">
+                    <label>
+                        Income Source
+                        <input type="text" id="incomeSource" placeholder="e.g., Salary, Freelance, Investment" maxlength="100">
+                    </label>
+
+                    <label>
+                        Amount
+                        <input type="number" id="incomeAmount" placeholder="0.00" min="0" step="0.01">
+                    </label>
+
+                    <label>
+                        Currency
+                        <select id="incomeCurrency">
+                            <option value="USD">USD</option>
+                            <option value="EUR">EUR</option>
+                            <option value="GBP">GBP</option>
+                            <option value="CAD">CAD</option>
+                            <option value="AUD">AUD</option>
+                            <option value="INR">INR</option>
+                            <option value="AED">AED</option>
+                        </select>
+                    </label>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn-primary" onclick="addIncome()">Add Income</button>
+                    <button type="button" class="btn-secondary" onclick="clearForm()">Clear Form</button>
+                </div>
+            </form>
+
+            <section class="income-list-section">
+                <h3>Income Entries</h3>
+                <div class="income-list" id="incomeList">
+                    <article class="empty-state">
+                        <div class="empty-state-icon"></div>
+                        <p>No income entries yet. Add one to get started!</p>
+                    </article>
+                </div>
+                <div class="scroll-hint" id="scrollHint" style="display: none;">Scroll to see more entries</div>
+            </section>
+        </section>
+
+        <!-- Tax Calculator & Analysis Panel -->
+        <section class="panel">
+            <h2>Tax Calculator & Analysis</h2>
+
+            <nav class="tabs">
+                <button class="tab-btn active" onclick="switchTab('summary')">Summary</button>
+                <button class="tab-btn" onclick="switchTab('breakdown')">Breakdown</button>
+                <button class="tab-btn" onclick="switchTab('converter')">Converter</button>
+            </nav>
+
+            <!-- Summary Tab -->
+            <section id="summary" class="tab-content active">
+                <div class="summary-grid">
+                    <article class="summary-item">
+                        <p class="summary-label">Total Income</p>
+                        <p class="summary-value" id="totalIncome">$0.00</p>
+                    </article>
+                    <article class="summary-item">
+                        <p class="summary-label">Total Tax</p>
+                        <p class="summary-value" id="totalTax">$0.00</p>
+                    </article>
+                    <article class="summary-item">
+                        <p class="summary-label">Net Income</p>
+                        <p class="summary-value" id="netIncome">$0.00</p>
+                    </article>
+                    <article class="summary-item">
+                        <p class="summary-label">Tax Rate</p>
+                        <p class="summary-value" id="taxRate">0%</p>
+                    </article>
+                </div>
+            </section>
+
+            <!-- Breakdown Tab -->
+            <section id="breakdown" class="tab-content">
+                <article class="breakdown-content" id="taxBreakdown">
+                    <h3>Tax Breakdown by Source</h3>
+                    <figure class="empty-state">
+                        <p>Add income to see the tax breakdown</p>
+                    </figure>
+                </article>
+            </section>
+
+            <!-- Converter Tab -->
+            <section id="converter" class="tab-content">
+                <article class="form-group">
+                    <label>Select Currency to Convert</label>
+                    <p class="currency-selector" id="currencySelector"></p>
+                </article>
+
+                <article id="conversionResult">
+                    <div class="empty-state">
+                        <p>Select a currency to see conversions</p>
+                    </div>
+                </article>
+            </section>
+        </section>
+    </main>
+
+    <div id="validationModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <p id="modalMessage"></p>
+            <button onclick="closeModal()">OK</button>
+        </div>
+    </div>
+
+    <script src="income_script.js"></script>
+</body>
+</html>
