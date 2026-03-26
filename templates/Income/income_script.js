@@ -169,10 +169,9 @@ function changeDisplayCurrency(currency) {
 }
 
 /**
- * Compute progressive tax for an income amount using currency-specific brackets.
+ * Compute the progressive tax for an income amount using currency-specific tax brackets.
  *
- * Calculates tax by applying each bracket's rate to the portion of income within that bracket,
- * using the bracket set for the given currency or falling back to USD brackets if the currency is unknown.
+ * Uses the bracket set for the given ISO currency code, falling back to USD brackets when the currency is unknown.
  *
  * @param {number} income - Income amount in the specified currency.
  * @param {string} currency - ISO currency code used to select the tax bracket set.
@@ -232,10 +231,10 @@ function getCurrencySymbol(currency) {
 }
 
 /**
- * Create a new income entry from current form values, persist it via the API, and refresh the dashboard.
+ * Create a new income entry from the current form values, persist it to the API, and refresh the dashboard.
  *
- * Validates that the source is non-empty and the amount is greater than zero; shows a modal for validation errors.
- * On success clears the input form, reloads income data, and shows a success modal. On failure shows an error modal.
+ * Validates that the source is provided and the amount is greater than zero; shows validation modals for input errors.
+ * On success clears the form, reloads income data, and shows a success modal. On failure shows an error modal with the failure message.
  */
 async function addIncome() {
     const source = document.getElementById('incomeSource').value.trim();
@@ -272,10 +271,10 @@ async function addIncome() {
 }
 
 /**
- * Delete an income entry by its ID and refresh the dashboard.
+ * Remove an income entry by id and refresh the dashboard UI.
  *
- * On success, reloads income data and shows a success modal. On failure, logs the error and shows an alert to the user.
- * @param {number|string} id - The identifier of the income entry to remove.
+ * On success shows a confirmation modal and reloads income data; on failure logs the error and shows an alert.
+ * @param {number|string} id - Identifier of the income entry to remove.
  */
 async function removeIncome(id) {
     try {
@@ -289,10 +288,7 @@ async function removeIncome(id) {
 }
 
 /**
- * Clear and reset the add-income form fields.
- *
- * Clears the source and amount inputs, resets the currency selector to 'USD' if present,
- * and focuses the income source input.
+ * Clear the add-income form inputs, reset the currency selector to 'USD' if present, and focus the source field.
  */
 function clearForm() {
     document.getElementById('incomeSource').value = '';
@@ -455,11 +451,11 @@ function updateTaxCalculations() {
 }
 
 /**
- * Rebuilds the currency selector UI and attaches click handlers to trigger conversion for a chosen currency.
+ * Rebuilds the currency selector with buttons for supported currencies and wires each button to invoke showConversion.
  *
  * Replaces the contents of the #currencySelector element with buttons for USD, EUR, GBP, CAD, AUD, INR, and AED.
- * Each button has class `currency-btn` and a `data-currency` attribute; clicking a button calls `showConversion` with
- * the button's currency value and the button element.
+ * Each button receives class `currency-btn` and a `data-currency` attribute; clicking a button calls
+ * `showConversion(selectedCurrency, buttonElement)`.
  */
 function updateConverter() {
     const selector = document.getElementById('currencySelector');
@@ -477,11 +473,11 @@ function updateConverter() {
 }
 
 /**
- * Render a conversion summary between the current display currency and a selected currency and mark the corresponding currency button active.
+ * Render conversion totals between the current display currency and a selected currency and mark the clicked currency button active.
  *
- * If there are no income entries, renders an empty-state message. Otherwise computes total income and total tax (using each entry's original currency and tax rules), converts those totals into the current display currency and the selected currency, and replaces the content of the `#conversionResult` element with a table showing original and converted amounts.
- * @param {string} selectedCurrency - The target currency code to convert totals into (e.g., 'USD', 'EUR').
- * @param {HTMLElement} buttonElement - The button element that was clicked; it will receive the active styling.
+ * If there are no income entries, replaces #conversionResult with an empty-state message. Otherwise computes total income and total tax using each entry's original currency and tax rules, converts those totals into the current display currency and the provided selected currency, and renders a summary table into #conversionResult.
+ * @param {string} selectedCurrency - Target currency code to convert totals into (e.g., 'USD', 'EUR').
+ * @param {HTMLElement} buttonElement - The button element to mark as active for the selected currency.
  */
 function showConversion(selectedCurrency, buttonElement) {
     // Update active button
@@ -653,8 +649,9 @@ function updateIncomeDistributionChart(bySource) {
 }
 
 /**
- * Renders the tax-vs-net-income bar chart by source and updates the global chart instance and legend.
- * @param {Object.<string, number>} bySourceUsd - Object mapping each source label to its total income amount in USD.
+ * Render or recreate the bar chart that compares net income and tax per source and update the chart legend.
+ * This updates the global `taxChartInstance` (replacing any existing instance) and the legend element `taxLegend`.
+ * @param {Object.<string, number>} bySourceUsd - Mapping of source label to that source's total income expressed in USD.
  */
 function updateTaxVsNetChart(bySourceUsd) {
     const ctx = document.getElementById('taxChart').getContext('2d');
@@ -812,11 +809,11 @@ function updateSourceDistributionChart(bySource) {
 }
 
 /**
- * Render a bar chart showing the effective tax rate for each income source and update its legend.
+ * Render the Effective Tax Rate bar chart for each income source and refresh its legend.
  *
  * Calculates each source's effective tax rate as (total tax for that source / total amount for that source) * 100,
- * destroys any existing chart instance, creates a new Chart.js bar chart with those rates, and refreshes the legend.
- * @param {Object<string, number>} bySource - Object whose keys are source labels (e.g., employer or description); values are amounts (used only to derive labels and order).
+ * replaces any existing chart with a new bar chart displaying those rates, and updates the chart legend.
+ * @param {Object<string, number>} bySource - Mapping of source labels to amounts; labels determine chart order and categories.
  */
 function updateTaxRateAnalysisChart(bySource) {
     const ctx = document.getElementById('taxRateChart').getContext('2d');
@@ -977,8 +974,8 @@ document.addEventListener('keypress', function(e) {
 });
 
 /**
- * Displays the validation modal and sets its message.
- * @param {string} message - Text to display inside the modal.
+ * Show the validation modal with the provided message.
+ * @param {string} message - Message to display inside the modal.
  */
 function showModal(message) {
     document.getElementById('modalMessage').textContent = message;

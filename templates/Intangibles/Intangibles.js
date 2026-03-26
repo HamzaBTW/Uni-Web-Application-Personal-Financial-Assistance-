@@ -11,13 +11,11 @@ let intangiblesData = {};
 let existingIntangibles = {};
 
 /**
- * Ensure the current user is authenticated, update the UI with their name and show navigation.
+ * Ensure a user is authenticated and update the UI with their display name and navigation visibility.
  *
- * If the user is not authenticated the browser is redirected to /auth.html and the function returns `null`.
- * When authenticated, the function sets the #username element text to `me.username || me.email || 'User'`
- * and makes the #nav-links element visible.
+ * If no authenticated user is returned, the browser is redirected to /auth.html and the function returns `null`.
  *
- * @returns {Object|null} The authenticated user object as returned by the server, or `null` if the user was redirected.
+ * @returns {Object|null} The authenticated user object returned by the server, or `null` if the user was redirected due to missing authentication.
  */
 async function requireUser() {
     const response = await fetch('/api/me');
@@ -115,11 +113,12 @@ function initializeSliders() {
 }
 
 /**
- * Validate the form, persist all six category assessments, and refresh the UI.
+ * Validate inputs, persist all six category assessments to the backend, and refresh the UI.
  *
- * Validates that every score is greater than 0 and every description is non-empty; if validation passes,
- * persists each category's score and description to the backend, reloads the latest assessment data,
- * updates visible breakdowns and charts, and shows a success modal. On failure, logs the error and shows an alert.
+ * Validates that every score is greater than 0 and every description is non-empty. If validation fails,
+ * shows a modal with an explanatory message and aborts. If validation succeeds, saves each category's
+ * score and description, reloads the latest assessment data, updates visible breakdowns and charts,
+ * and shows a success modal. If saving fails, displays an alert indicating the failure.
  */
 async function saveIntangibles() {
     console.log('saveIntangibles called');
@@ -181,10 +180,7 @@ function resetForm() {
 }
 
 /**
- * Refresh the Intangible Assets page UI by updating the score breakdown, charts, and summary.
- *
- * Calls the routines that rebuild the breakdown section, redraw the radar chart, and refresh
- * the average score and wealth level display so the UI reflects the current state.
+ * Refreshes the Intangible Assets UI so the score breakdown, charts, and average/wealth summary reflect current inputs.
  */
 function updateDisplay() {
     updateBreakdown();
@@ -220,8 +216,8 @@ function getWealthLevel(average) {
 /**
  * Update the page summary to reflect the current average score and corresponding wealth level.
  *
- * Calculates the average score from the sliders and sets the text of #totalScore and #averageScore
- * to the average followed by "/10", and sets #category and #wealthLevel to the derived wealth level label.
+ * Sets the text of #totalScore and #averageScore to "<average>/10" and sets #category and #wealthLevel
+ * to the wealth level label derived from that average.
  */
 function updateSummary() {
     const average = calculateAverageScore();
@@ -232,11 +228,11 @@ function updateSummary() {
 }
 
 /**
- * Render the score breakdown for each category into the page's breakdownDetails element.
+ * Render a score breakdown for each category into the #breakdownDetails element.
  *
- * Reads the current slider values, computes each category's percentage of a 10-point scale,
- * and writes an HTML list of category names, scores (x/10), and percentages into the element
- * with id "breakdownDetails".
+ * Reads current slider values and injects HTML that lists each category's score (x/10)
+ * and its percentage of a 10-point scale, replacing the existing contents of the
+ * element with id "breakdownDetails".
  */
 function updateBreakdown() {
     const breakdown = document.getElementById('breakdownDetails');
@@ -258,9 +254,10 @@ function updateBreakdown() {
 }
 
 /**
- * Render and refresh the radar chart using the current slider values and ensure the charts section is visible.
+ * Render the radar chart for current category scores and make the charts section visible.
  *
- * If an existing chart instance is present it is destroyed before creating a new Chart.js radar chart configured for a 0–10 scale and styled for the Intangible Wealth Scores dataset.
+ * Updates the charts section display, refreshes the summary, and recreates the Chart.js radar chart
+ * using current slider values; any existing chart instance is destroyed before a new one is created.
  */
 function updateCharts() {
     const chartsSection = document.getElementById('chartsSection');
@@ -330,7 +327,7 @@ function updateCharts() {
 }
 
 /**
- * Activate the given tab content and its corresponding tab button.
+ * Show the tab content element with the given id and mark its corresponding tab button active.
  * @param {string} tabName - The id of the tab content element to show; the tab button whose text includes this name (case-insensitive) will also be marked active.
  */
 function switchTab(tabName) {
