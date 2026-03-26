@@ -11,6 +11,17 @@ let intangiblesData = {};
 let existingIntangibles = {};
 
 /**
+ * Escape HTML special characters to prevent XSS when interpolating into innerHTML.
+ * @param {string} str - Raw text.
+ * @returns {string} Escaped HTML string.
+ */
+function escapeHTML(str) {
+    const div = document.createElement('div');
+    div.appendChild(document.createTextNode(String(str)));
+    return div.innerHTML;
+}
+
+/**
  * Ensure a user is authenticated and update the UI with their display name and navigation visibility.
  *
  * If no authenticated user is returned, the browser is redirected to /auth.html and the function returns `null`.
@@ -152,7 +163,7 @@ async function saveIntangibles() {
         showModal('Assessment saved successfully!');
     } catch (error) {
         console.error('Failed to save intangibles:', error);
-        alert('Failed to save assessment. Please try again.');
+        showModal('Failed to save assessment. Please try again.');
     }
 }
 
@@ -243,7 +254,7 @@ function updateBreakdown() {
         const percentage = (scores[i] / 10 * 100).toFixed(0);
         html += `
             <div class="breakdown-item">
-                <div class="breakdown-label">${cat}</div>
+                <div class="breakdown-label">${escapeHTML(cat)}</div>
                 <div class="breakdown-value">${scores[i]}/10 <span class="breakdown-percent">(${percentage}%)</span></div>
             </div>
         `;
@@ -264,7 +275,6 @@ function updateCharts() {
     const scores = sliderIds.map(id => parseInt(document.getElementById(id).value));
     
     chartsSection.style.display = 'grid';
-    updateSummary();
 
     const ctx = document.getElementById('radarChart');
     if (!ctx) return;

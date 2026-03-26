@@ -132,8 +132,8 @@ const taxBrackets = {
     ]
 };
 
-// Exchange rates (approximate, for demonstration)
-const exchangeRates = {
+// Exchange rates fallback used when live rates cannot be loaded
+let exchangeRates = {
     USD: 1,
     EUR: 0.92,
     GBP: 0.79,
@@ -143,6 +143,23 @@ const exchangeRates = {
     AED: 3.67
 };
 
+/**
+ * Load latest exchange rates from the server and keep fallback values on failure.
+ */
+async function loadExchangeRates() {
+    try {
+        const res = await fetch('/api/exchange-rates');
+        if (!res.ok) return;
+
+        const data = await res.json();
+        if (data && data.rates && typeof data.rates === 'object') {
+            exchangeRates = data.rates;
+        }
+    } catch (e) {
+        console.warn('Could not load live exchange rates, using fallback.', e);
+    }
+}
+
 let incomeEntries = [];
 let displayCurrency = 'USD'; // Current currency to display all values in
 
@@ -151,11 +168,21 @@ let displayCurrency = 'USD'; // Current currency to display all values in
  * @param {string} text - The text to escape.
  * @returns {string} The escaped text safe for HTML insertion.
  */
-function escapeHtml(text) {
+function escapeHTML(text) {
     const div = document.createElement('div');
-    div.textContent = text;
+    div.appendChild(document.createTextNode(String(text)));
     return div.innerHTML;
 }
+
+const CURRENCY_SYMBOLS = {
+    USD: '$',
+    EUR: '€',
+    GBP: '£',
+    CAD: 'C$',
+    AUD: 'A$',
+    INR: '₹',
+    AED: 'AED'
+};
 
 /**
  * Set the UI display currency and refresh dependent calculations, charts, and converter.
@@ -200,16 +227,7 @@ function calculateTax(income, currency) {
  * @returns {string} The formatted currency string with a symbol and two decimal places (for example, `$123.45`).
  */
 function formatCurrency(amount, currency) {
-    const symbols = {
-        USD: '$',
-        EUR: '€',
-        GBP: '£',
-        CAD: 'C$',
-        AUD: 'A$',
-        INR: '₹',
-        AED: 'AED'
-    };
-    return `${symbols[currency] || '$'}${amount.toFixed(2)}`;
+    return `${getCurrencySymbol(currency)}${amount.toFixed(2)}`;
 }
 
 /**
@@ -218,16 +236,7 @@ function formatCurrency(amount, currency) {
  * @returns {string} The symbol for the currency (e.g., '$', '€', '£'); returns '$' if the code is not recognized.
  */
 function getCurrencySymbol(currency) {
-    const symbols = {
-        USD: '$',
-        EUR: '€',
-        GBP: '£',
-        CAD: 'C$',
-        AUD: 'A$',
-        INR: '₹',
-        AED: 'AED'
-    };
-    return symbols[currency] || '$';
+    return CURRENCY_SYMBOLS[currency] || '$';
 }
 
 /**
@@ -256,9 +265,9 @@ async function addIncome() {
             source_type: source,
             amount: amount,
             currency: currency,
-            frequency: 'annual', // Default to annual for now
-            tax_band: 'Basic Rate', // Default
-            description: source // Use source as description
+            frequency: 'annual', // TODO: expose as a form field
+            tax_band: 'Basic Rate', // TODO: expose as a form field
+            description: source
         });
 
         clearForm();
@@ -354,7 +363,7 @@ function updateIncomeList() {
         return `
         <div class="income-item">
             <div class="income-item-info">
-                <div class="income-item-name">${escapeHtml(entry.source_type || entry.description)}</div>
+                <div class="income-item-name">${escapeHTML(entry.source_type || entry.description)}</div>
                 <div class="income-item-amount">${displayAmount}</div>
             </div>
             <div class="income-item-actions">
@@ -438,7 +447,7 @@ function updateTaxCalculations() {
         const rate = amt > 0 ? ((taxInOriginalCurrency / amt) * 100).toFixed(2) : '0';
         breakdownHTML += `
             <tr>
-                <td><strong>${escapeHtml(entry.source_type || entry.description)}</strong></td>
+                <td><strong>${escapeHTML(entry.source_type || entry.description)}</strong></td>
                 <td>${formatCurrency(amt, curr)}</td>
                 <td>${formatCurrency(amtDisplay, displayCurrency)}</td>
                 <td>${formatCurrency(taxDisplay, displayCurrency)}</td>
@@ -879,7 +888,6 @@ function updateTaxRateAnalysisChart(bySource) {
             scales: {
                 y: {
                     beginAtZero: true,
-                    max: 50,
                     ticks: {
                         callback: function(value) {
                             return value + '%';
@@ -908,7 +916,7 @@ function updateLegend(elementId, labels, colors) {
     legendContainer.innerHTML = labels.map((label, index) => `
         <div class="legend-item">
             <div class="legend-color" style="background-color: ${colors[index]};"></div>
-            <span>${label}</span>
+            <span>${escapeHTML(label)}</span>
         </div>
     `).join('');
 }
@@ -960,6 +968,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     });
 
     if (user) {
+        await loadExchangeRates();
         clearForm();
         await loadIncomeData();
         updateConverter();

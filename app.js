@@ -524,7 +524,8 @@ const server = http.createServer(async (req, res) => {
         '/liabilities.html',
         '/protection.html',
         '/estate.html',
-        '/Intangibles.html'
+        '/Intangibles.html',
+        '/intangibles.html'
     ]);
 
     if (protectedPages.has(pathname)) {
