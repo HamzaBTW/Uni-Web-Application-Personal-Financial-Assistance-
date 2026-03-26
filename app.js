@@ -44,6 +44,15 @@ function buildSessionCookie(sid, maxAge = 7200) {
     });
 }
 
+/**
+ * Provide a set of HTTP security headers for responses.
+ *
+ * @returns {{[header: string]: string}} An object mapping header names to values:
+ * - `X-Content-Type-Options`: prevents MIME type sniffing (`nosniff`).
+ * - `X-Frame-Options`: disallows embedding in frames (`DENY`).
+ * - `X-XSS-Protection`: enables basic XSS protection in legacy browsers (`1; mode=block`).
+ * - `Content-Security-Policy`: restricts resource loading (self-only by default; allows scripts from https://cdn.jsdelivr.net, styles from https://fonts.googleapis.com and inline styles, fonts from https://fonts.gstatic.com, and images from self and data URIs).
+ */
 function securityHeaders() {
     return {
         'X-Content-Type-Options': 'nosniff',

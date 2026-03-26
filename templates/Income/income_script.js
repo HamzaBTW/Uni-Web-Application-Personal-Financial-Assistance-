@@ -1,4 +1,12 @@
-// Authentication check
+/**
+ * Ensures the current user is authenticated and updates the UI with user info.
+ *
+ * If the server indicates the user is not authenticated, navigates the browser to `/auth.html` and returns `null`.
+ * When authenticated, sets the `#username` element's text to the user's `username` or `email` (or `'User'` if both are absent)
+ * and makes `#nav-links` visible, then returns the parsed user object.
+ *
+ * @returns {Object|null} The authenticated user object parsed from the response, or `null` if redirected due to lack of authentication.
+ */
 async function requireUser() {
     const response = await fetch('/api/me');
     if (!response.ok) {
@@ -15,14 +23,23 @@ async function requireUser() {
     return me;
 }
 
-// Fetch income data
+/**
+ * Retrieve the authenticated user's income entries from the API.
+ * @returns {Array<Object>} The parsed JSON array of income entries.
+ * @throws {Error} If the API response is not OK.
+ */
 async function fetchIncome() {
     const response = await fetch('/api/income');
     if (!response.ok) throw new Error('Failed to fetch income');
     return response.json();
 }
 
-// Save income entry
+/**
+ * Create a new income entry via the backend API.
+ * @param {Object} incomeData - Form data for the income entry (e.g., { source, amount, currency, frequency, tax_band, description }).
+ * @returns {Object} The saved income entry as returned by the API.
+ * @throws {Error} If the server responds with a non-OK status (`'Failed to save income'`).
+ */
 async function saveIncome(incomeData) {
     const response = await fetch('/api/income', {
         method: 'POST',
@@ -33,7 +50,11 @@ async function saveIncome(incomeData) {
     return response.json();
 }
 
-// Delete income entry
+/**
+ * Delete an income entry on the server by its ID.
+ * @param {number} id - The ID of the income entry to delete.
+ * @throws {Error} If the server responds with a non-OK status.
+ */
 async function deleteIncome(id) {
     const response = await fetch(`/api/income/${id}/delete`, { method: 'POST' });
     if (!response.ok) throw new Error('Failed to delete income');
@@ -125,7 +146,10 @@ const exchangeRates = {
 let incomeEntries = [];
 let displayCurrency = 'USD'; // Current currency to display all values in
 
-// Change display currency
+/**
+ * Set the UI display currency and refresh dependent calculations, charts, and converter.
+ * @param {string} currency - The target currency code (e.g., 'USD', 'EUR') to use for displaying amounts.
+ */
 function changeDisplayCurrency(currency) {
     displayCurrency = currency;
     updateTaxCalculations();
@@ -133,7 +157,16 @@ function changeDisplayCurrency(currency) {
     updateConverter();
 }
 
-// Calculate tax using progressive brackets
+/**
+ * Compute progressive tax for an income amount using currency-specific brackets.
+ *
+ * Calculates tax by applying each bracket's rate to the portion of income within that bracket,
+ * using the bracket set for the given currency or falling back to USD brackets if the currency is unknown.
+ *
+ * @param {number} income - Income amount in the specified currency.
+ * @param {string} currency - ISO currency code used to select the tax bracket set.
+ * @returns {number} Tax amount rounded to two decimal places.
+ */
 function calculateTax(income, currency) {
     const brackets = taxBrackets[currency] || taxBrackets.USD;
     let tax = 0;
@@ -150,7 +183,12 @@ function calculateTax(income, currency) {
     return Math.round(tax * 100) / 100;
 }
 
-// Format currency
+/**
+ * Format an amount as a currency string using a symbol for known ISO currency codes.
+ * @param {number} amount - The monetary amount to format; will be shown with two decimal places.
+ * @param {string} currency - ISO currency code (e.g., 'USD', 'EUR'); selects the symbol. If unknown, the dollar sign (`$`) is used.
+ * @returns {string} The formatted currency string with a symbol and two decimal places (for example, `$123.45`).
+ */
 function formatCurrency(amount, currency) {
     const symbols = {
         USD: '$',
@@ -164,7 +202,11 @@ function formatCurrency(amount, currency) {
     return `${symbols[currency] || '$'}${amount.toFixed(2)}`;
 }
 
-// Get currency symbol only
+/**
+ * Get the currency symbol for a given currency code.
+ * @param {string} currency - Currency code (e.g., 'USD', 'EUR', 'GBP').
+ * @returns {string} The symbol for the currency (e.g., '$', '€', '£'); returns '$' if the code is not recognized.
+ */
 function getCurrencySymbol(currency) {
     const symbols = {
         USD: '$',
@@ -178,7 +220,12 @@ function getCurrencySymbol(currency) {
     return symbols[currency] || '$';
 }
 
-// Add income entry
+/**
+ * Create a new income entry from current form values, persist it via the API, and refresh the dashboard.
+ *
+ * Validates that the source is non-empty and the amount is greater than zero; shows a modal for validation errors.
+ * On success clears the input form, reloads income data, and shows a success modal. On failure shows an error modal.
+ */
 async function addIncome() {
     const source = document.getElementById('incomeSource').value.trim();
     const amount = parseFloat(document.getElementById('incomeAmount').value);
@@ -213,7 +260,12 @@ async function addIncome() {
     }
 }
 
-// Remove income entry
+/**
+ * Delete an income entry by its ID and refresh the dashboard.
+ *
+ * On success, reloads income data and shows a success modal. On failure, logs the error and shows an alert to the user.
+ * @param {number|string} id - The identifier of the income entry to remove.
+ */
 async function removeIncome(id) {
     try {
         await deleteIncome(id);
@@ -225,7 +277,12 @@ async function removeIncome(id) {
     }
 }
 
-// Clear form
+/**
+ * Clear and reset the add-income form fields.
+ *
+ * Clears the source and amount inputs, resets the currency selector to 'USD' if present,
+ * and focuses the income source input.
+ */
 function clearForm() {
     document.getElementById('incomeSource').value = '';
     document.getElementById('incomeAmount').value = '';
@@ -235,7 +292,12 @@ function clearForm() {
     document.getElementById('incomeSource').focus();
 }
 
-// Load income data from API
+/**
+ * Load income entries from the API and refresh the UI.
+ *
+ * Fetches entries, assigns them to the module-level `incomeEntries`, and calls `updateDisplay()` to update the interface.
+ * If fetching fails, logs the error, clears `incomeEntries`, and still calls `updateDisplay()` to reflect the empty state.
+ */
 async function loadIncomeData() {
     try {
         incomeEntries = await fetchIncome();
@@ -247,7 +309,11 @@ async function loadIncomeData() {
     }
 }
 
-// Update all displays
+/**
+ * Refreshes the dashboard UI sections related to income, tax calculations, currency conversion, and charts.
+ *
+ * Updates the income list, recomputes tax summaries and breakdowns, rebuilds the currency converter output, and refreshes all charts to reflect current data and display currency.
+ */
 function updateDisplay() {
     updateIncomeList();
     updateTaxCalculations();
@@ -255,7 +321,11 @@ function updateDisplay() {
     updateCharts();
 }
 
-// Update income list display
+/**
+ * Render the income entries list into the UI and wire up delete buttons.
+ *
+ * Updates the element with id "incomeList" to show either an empty-state message or a list of income items (each showing source and formatted amount), attaches click handlers to buttons with class "remove-income-btn" to remove the corresponding entry, and toggles visibility of the element with id "scrollHint" based on the list height.
+ */
 function updateIncomeList() {
     const listContainer = document.getElementById('incomeList');
     const scrollHint = document.getElementById('scrollHint');
@@ -297,7 +367,11 @@ function updateIncomeList() {
     scrollHint.style.display = listContainer.scrollHeight > 400 ? 'block' : 'none';
 }
 
-// Update tax calculations
+/**
+ * Recomputes totals, effective tax rate, and per-source tax breakdown, then updates the dashboard UI.
+ *
+ * Recalculates total income and total tax using each entry's own currency brackets and the global exchangeRates, converts totals into the current displayCurrency, updates summary fields (#totalIncome, #totalTax, #netIncome, #taxRate), and renders a per-source breakdown table into #taxBreakdown. If there are no entries, renders an empty-state message.
+ */
 function updateTaxCalculations() {
     // Calculate totals - tax per entry using its OWN currency's brackets
     let totalIncomeUsd = 0;
@@ -369,7 +443,13 @@ function updateTaxCalculations() {
     breakdownContainer.innerHTML = breakdownHTML;
 }
 
-// Update converter
+/**
+ * Rebuilds the currency selector UI and attaches click handlers to trigger conversion for a chosen currency.
+ *
+ * Replaces the contents of the #currencySelector element with buttons for USD, EUR, GBP, CAD, AUD, INR, and AED.
+ * Each button has class `currency-btn` and a `data-currency` attribute; clicking a button calls `showConversion` with
+ * the button's currency value and the button element.
+ */
 function updateConverter() {
     const selector = document.getElementById('currencySelector');
     const currencies = ['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'INR', 'AED'];
@@ -385,7 +465,13 @@ function updateConverter() {
     });
 }
 
-// Show conversion for selected currency
+/**
+ * Render a conversion summary between the current display currency and a selected currency and mark the corresponding currency button active.
+ *
+ * If there are no income entries, renders an empty-state message. Otherwise computes total income and total tax (using each entry's original currency and tax rules), converts those totals into the current display currency and the selected currency, and replaces the content of the `#conversionResult` element with a table showing original and converted amounts.
+ * @param {string} selectedCurrency - The target currency code to convert totals into (e.g., 'USD', 'EUR').
+ * @param {HTMLElement} buttonElement - The button element that was clicked; it will receive the active styling.
+ */
 function showConversion(selectedCurrency, buttonElement) {
     // Update active button
     document.querySelectorAll('.currency-btn').forEach(btn => {
@@ -445,7 +531,13 @@ function showConversion(selectedCurrency, buttonElement) {
     resultContainer.innerHTML = html;
 }
 
-// Update Charts
+/**
+ * Refreshes the dashboard charts to reflect the current income entries and selected display currency.
+ *
+ * If there are no income entries, hides the charts section. Otherwise computes per-source totals
+ * (converting entry amounts through USD into the current display currency) and updates all chart
+ * visualizations (income distribution, tax vs net, source distribution, and tax rate analysis).
+ */
 function updateCharts() {
     const chartsSection = document.getElementById('chartsSection');
     
@@ -492,7 +584,12 @@ function updateCharts() {
     updateTaxRateAnalysisChart(bySourceUsd);
 }
 
-// Income Distribution Chart (Pie)
+/**
+ * Render the income distribution pie chart and update its legend.
+ *
+ * Recreates the Chart.js pie chart displayed in the #incomeChart canvas using the provided source-to-amount mapping, destroys any previous chart instance, and refreshes the legend.
+ * @param {Object.<string, number>} bySource - Mapping of income source labels to their numeric amounts (in the current display currency). 
+ */
 function updateIncomeDistributionChart(bySource) {
     const ctx = document.getElementById('incomeChart').getContext('2d');
     const labels = Object.keys(bySource);
@@ -544,7 +641,10 @@ function updateIncomeDistributionChart(bySource) {
     updateLegend('incomeLegend', labels, colors);
 }
 
-// Tax vs Net Income Chart (Bar)
+/**
+ * Renders the tax-vs-net-income bar chart by source and updates the global chart instance and legend.
+ * @param {Object.<string, number>} bySourceUsd - Object mapping each source label to its total income amount in USD.
+ */
 function updateTaxVsNetChart(bySourceUsd) {
     const ctx = document.getElementById('taxChart').getContext('2d');
     const labels = Object.keys(bySourceUsd);
@@ -642,7 +742,13 @@ function updateTaxVsNetChart(bySourceUsd) {
     updateLegend('taxLegend', ['Net Income', 'Tax'], [chartColors.success, chartColors.danger]);
 }
 
-// Income by Source Chart (Doughnut)
+/**
+ * Render or refresh the doughnut chart that displays income totals grouped by source.
+ *
+ * Updates the global chart instance for the currency/source distribution and replaces the currency legend in the DOM.
+ *
+ * @param {Object<string, number>} bySource - Mapping of source label to total amount (values expressed in the current display currency).
+ */
 function updateSourceDistributionChart(bySource) {
     const ctx = document.getElementById('currencyChart').getContext('2d');
     const labels = Object.keys(bySource);
@@ -694,7 +800,13 @@ function updateSourceDistributionChart(bySource) {
     updateLegend('currencyLegend', labels, colors);
 }
 
-// Tax Rate Analysis Chart (Bar)
+/**
+ * Render a bar chart showing the effective tax rate for each income source and update its legend.
+ *
+ * Calculates each source's effective tax rate as (total tax for that source / total amount for that source) * 100,
+ * destroys any existing chart instance, creates a new Chart.js bar chart with those rates, and refreshes the legend.
+ * @param {Object<string, number>} bySource - Object whose keys are source labels (e.g., employer or description); values are amounts (used only to derive labels and order).
+ */
 function updateTaxRateAnalysisChart(bySource) {
     const ctx = document.getElementById('taxRateChart').getContext('2d');
     const labels = Object.keys(bySource);
@@ -768,7 +880,15 @@ function updateTaxRateAnalysisChart(bySource) {
     updateLegend('taxRateLegend', ['Effective Tax Rate'], [chartColors.primary]);
 }
 
-// Update legend helper
+/**
+ * Render a simple legend into a container element by id.
+ *
+ * Each label is paired with the color at the same index to create legend entries.
+ *
+ * @param {string} elementId - The id of the container element where the legend will be rendered.
+ * @param {string[]} labels - Array of label strings for legend entries.
+ * @param {string[]} colors - Array of CSS color strings; each color corresponds to the label at the same index.
+ */
 function updateLegend(elementId, labels, colors) {
     const legendContainer = document.getElementById(elementId);
     legendContainer.innerHTML = labels.map((label, index) => `
@@ -779,7 +899,11 @@ function updateLegend(elementId, labels, colors) {
     `).join('');
 }
 
-// Switch tabs
+/**
+ * Activate the tab panel with the given ID and set its corresponding tab button to active.
+ *
+ * @param {string} tabName - The ID of the tab content to show; a case-insensitive match is used to locate and activate the related tab button.
+ */
 function switchTab(tabName) {
     // Hide all tabs
     document.querySelectorAll('.tab-content').forEach(tab => {
@@ -835,12 +959,18 @@ document.addEventListener('keypress', function(e) {
     }
 });
 
-// Modal functions
+/**
+ * Displays the validation modal and sets its message.
+ * @param {string} message - Text to display inside the modal.
+ */
 function showModal(message) {
     document.getElementById('modalMessage').textContent = message;
     document.getElementById('validationModal').style.display = 'flex';
 }
 
+/**
+ * Hides the validation modal dialog.
+ */
 function closeModal() {
     document.getElementById('validationModal').style.display = 'none';
 }

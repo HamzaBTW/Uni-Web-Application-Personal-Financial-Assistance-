@@ -10,7 +10,15 @@ let radarChartInstance = null;
 let intangiblesData = {};
 let existingIntangibles = {};
 
-// Authentication check
+/**
+ * Ensure the current user is authenticated, update the UI with their name and show navigation.
+ *
+ * If the user is not authenticated the browser is redirected to /auth.html and the function returns `null`.
+ * When authenticated, the function sets the #username element text to `me.username || me.email || 'User'`
+ * and makes the #nav-links element visible.
+ *
+ * @returns {Object|null} The authenticated user object as returned by the server, or `null` if the user was redirected.
+ */
 async function requireUser() {
     const response = await fetch('/api/me');
     if (!response.ok) {
@@ -27,7 +35,12 @@ async function requireUser() {
     return me;
 }
 
-// Fetch intangibles data
+/**
+ * Fetches intangible asset records from the server and updates the in-memory mapping of existing records keyed by category.
+ *
+ * @returns {Array<Object>} The fetched array of intangible records.
+ * @throws {Error} If the network request fails or the response is not OK.
+ */
 async function fetchIntangibles() {
     const response = await fetch('/api/intangibles');
     if (!response.ok) throw new Error('Failed to fetch intangibles');
@@ -46,7 +59,14 @@ async function fetchIntangibles() {
     return data;
 }
 
-// Save intangible data
+/**
+ * Persist an intangible category record to the backend, creating a new record or updating an existing one.
+ *
+ * @param {string} category - The human-readable category name corresponding to one of the configured categories.
+ * @param {number|string} score - The category score (expected 0–10); numeric or numeric-string accepted.
+ * @param {string} description - The textual description for the category.
+ * @throws {Error} If the server responds with a non-OK status when creating or updating the record.
+ */
 async function saveIntangible(category, score, description) {
     // Find the key for this category
     const categoryIndex = categories.indexOf(category);
@@ -77,7 +97,12 @@ async function saveIntangible(category, score, description) {
     }
 }
 
-// Initialize sliders
+/**
+ * Attach input listeners to the configured sliders so changes update the visible value and refresh the UI.
+ *
+ * Expects global arrays `sliderIds` and `valueIds` to be defined and aligned by index; each slider element with an ID from `sliderIds`
+ * will update the corresponding value span from `valueIds` on user input and invoke `updateDisplay()`.
+ */
 function initializeSliders() {
     sliderIds.forEach((sliderId, index) => {
         const slider = document.getElementById(sliderId);
@@ -89,7 +114,13 @@ function initializeSliders() {
     });
 }
 
-// Save intangibles assessment
+/**
+ * Validate the form, persist all six category assessments, and refresh the UI.
+ *
+ * Validates that every score is greater than 0 and every description is non-empty; if validation passes,
+ * persists each category's score and description to the backend, reloads the latest assessment data,
+ * updates visible breakdowns and charts, and shows a success modal. On failure, logs the error and shows an alert.
+ */
 async function saveIntangibles() {
     console.log('saveIntangibles called');
 
@@ -126,7 +157,11 @@ async function saveIntangibles() {
     }
 }
 
-// Reset form
+/**
+ * Restore the assessment form to its default state and refresh the UI.
+ *
+ * Clears all category description textareas, sets every slider and its displayed value to 5, and calls updateDisplay() to refresh the breakdown, charts, and summary.
+ */
 function resetForm() {
     console.log('resetForm called');
     // Clear textareas
@@ -145,20 +180,35 @@ function resetForm() {
     updateDisplay();
 }
 
-// Update display
+/**
+ * Refresh the Intangible Assets page UI by updating the score breakdown, charts, and summary.
+ *
+ * Calls the routines that rebuild the breakdown section, redraw the radar chart, and refresh
+ * the average score and wealth level display so the UI reflects the current state.
+ */
 function updateDisplay() {
     updateBreakdown();
     updateCharts();
     updateSummary();
 }
 
-// Calculate average score
+/**
+ * Compute the arithmetic mean of the slider values referenced by `sliderIds`.
+ *
+ * Reads the current numeric values from the DOM elements whose IDs are listed in `sliderIds`
+ * and returns the average formatted with one decimal place.
+ * @returns {string} The average slider score formatted with one decimal place (e.g., "7.5").
+ */
 function calculateAverageScore() {
     const scores = sliderIds.map(id => parseInt(document.getElementById(id).value));
     return (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1);
 }
 
-// Get wealth level
+/**
+ * Map an average score to a wealth level label.
+ * @param {number|string} average - Average score (or numeric string) in the 0–10 range to evaluate.
+ * @returns {string} `Outstanding` if average >= 9, `Strong` if average >= 7, `Moderate` if average >= 5, `Developing` otherwise.
+ */
 function getWealthLevel(average) {
     const avg = parseFloat(average);
     if (avg >= 9) return 'Outstanding';
@@ -167,7 +217,12 @@ function getWealthLevel(average) {
     return 'Developing';
 }
 
-// Update summary
+/**
+ * Update the page summary to reflect the current average score and corresponding wealth level.
+ *
+ * Calculates the average score from the sliders and sets the text of #totalScore and #averageScore
+ * to the average followed by "/10", and sets #category and #wealthLevel to the derived wealth level label.
+ */
 function updateSummary() {
     const average = calculateAverageScore();
     document.getElementById('totalScore').textContent = average + '/10';
@@ -176,7 +231,13 @@ function updateSummary() {
     document.getElementById('wealthLevel').textContent = getWealthLevel(average);
 }
 
-// Update breakdown
+/**
+ * Render the score breakdown for each category into the page's breakdownDetails element.
+ *
+ * Reads the current slider values, computes each category's percentage of a 10-point scale,
+ * and writes an HTML list of category names, scores (x/10), and percentages into the element
+ * with id "breakdownDetails".
+ */
 function updateBreakdown() {
     const breakdown = document.getElementById('breakdownDetails');
     const scores = sliderIds.map(id => parseInt(document.getElementById(id).value));
@@ -196,7 +257,11 @@ function updateBreakdown() {
     breakdown.innerHTML = html;
 }
 
-// Update radar chart
+/**
+ * Render and refresh the radar chart using the current slider values and ensure the charts section is visible.
+ *
+ * If an existing chart instance is present it is destroyed before creating a new Chart.js radar chart configured for a 0–10 scale and styled for the Intangible Wealth Scores dataset.
+ */
 function updateCharts() {
     const chartsSection = document.getElementById('chartsSection');
     const scores = sliderIds.map(id => parseInt(document.getElementById(id).value));
@@ -263,7 +328,10 @@ function updateCharts() {
     });
 }
 
-// Switch tabs
+/**
+ * Activate the given tab content and its corresponding tab button.
+ * @param {string} tabName - The id of the tab content element to show; the tab button whose text includes this name (case-insensitive) will also be marked active.
+ */
 function switchTab(tabName) {
     console.log('switchTab called with', tabName);
     // Hide all tabs
@@ -333,12 +401,18 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
 });
 
-// Modal functions
+/**
+ * Display the validation modal and set its message.
+ * @param {string} message - The text to show inside the modal.
+ */
 function showModal(message) {
     document.getElementById('modalMessage').textContent = message;
     document.getElementById('validationModal').style.display = 'flex';
 }
 
+/**
+ * Closes the validation modal by hiding it from view.
+ */
 function closeModal() {
     document.getElementById('validationModal').style.display = 'none';
 }
