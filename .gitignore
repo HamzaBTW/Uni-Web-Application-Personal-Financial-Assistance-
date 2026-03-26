@@ -4,3 +4,5 @@ data/*.db-wal
 data/*.db-shm
 .github\agents\video-assignment.agent.md
 video-scripts.md
+COLLABORATION-GUIDE.md
+planning-guide.md

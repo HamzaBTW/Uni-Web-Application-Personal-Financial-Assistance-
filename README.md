@@ -1,286 +1,165 @@
 # Personal Financial Assistance
 
-A comprehensive web application designed to help users manage and understand their complete financial picture. The application is organised into **7 key blocks**, each represented as a dedicated sub-page.
+A full-stack personal finance web application for tracking a user's financial profile across seven areas:
 
----
+1. Income
+2. Assets
+3. Liabilities
+4. Protection
+5. Estate
+6. Intangibles
+7. Authentication (sign up/login/logout)
 
-## Sub-Pages
+## Current Architecture
 
-### 1. Income & Tax
+The app currently runs on a custom Node.js HTTP server.
 
-Tracks all sources of income and associated tax obligations.
+- Runtime: Node.js (CommonJS)
+- Server: native `http` module in [app.js](app.js)
+- Database: SQLite via `better-sqlite3`
+- Auth: cookie-based server-side sessions (in-memory `Map`)
+- Frontend: static HTML/CSS/JS pages under [templates](templates)
+- Charts: Chart.js loaded from jsDelivr CDN
 
-- **Employment income** (salary, wages, bonuses)
-- **Self-employment / freelance earnings**
-- **Investment income** (dividends, interest, capital gains)
-- **Rental income**
-- **Tax calculations** (income tax bands, National Insurance, allowances)
-- **Net take-home pay summary**
+## Implemented Features
 
----
+### Auth
 
-### 2. Assets (What You Own)
+- Sign up: `POST /api/signup`
+- Login: `POST /api/login`
+- Logout: `GET /api/logout`
+- Current user: `GET /api/me`
 
-Catalogues everything the user owns that holds monetary value.
+Auth pages are served from [templates/Auth](templates/Auth).
 
-- **Cash & savings** (bank accounts, ISAs, emergency funds)
-- **Investments** (stocks, bonds, mutual funds, crypto)
-- **Property** (primary residence, buy-to-let)
-- **Vehicles**
-- **Valuables** (jewellery, art, collectibles)
-- **Total asset valuation dashboard**
+### Financial Modules
 
----
+The following user-scoped modules are implemented with CRUD APIs:
 
-### 3. Liabilities (What You Owe)
+- Income: `/api/income`
+- Assets: `/api/assets`
+- Liabilities: `/api/liabilities`
+- Protection: `/api/protection`
+- Estate: `/api/estate`
+- Intangibles: `/api/intangibles`
 
-Records all debts and financial obligations.
+Each module supports:
 
-- **Mortgage balances**
-- **Student loans**
-- **Credit card debt**
-- **Personal loans & car finance**
-- **Outstanding bills / overdrafts**
-- **Debt-to-asset ratio overview**
+- `GET /api/<table>` list entries
+- `POST /api/<table>` create entry
+- `POST /api/<table>/<id>/edit` update entry
+- `POST /api/<table>/<id>/delete` delete entry
 
----
+### Dashboard
 
-### 4. Protection (Insurance)
+- Aggregates are exposed via `GET /api/dashboard`.
+- Dashboard page is in [templates/Dashboard](templates/Dashboard).
 
-Manages all insurance policies that safeguard the user's finances and wellbeing.
+### Exchange Rates
 
-- **Life insurance**
-- **Health / medical insurance**
-- **Home & contents insurance**
-- **Vehicle insurance**
-- **Income protection / critical illness cover**
-- **Policy renewal dates & premium tracking**
+- Endpoint: `GET /api/exchange-rates` (authenticated)
+- Server behavior: attempts live rates from `open.er-api.com`, caches successful live responses for 1 hour, falls back to internal static rates if live fetch fails, and caches fallback for 10 minutes.
 
----
+## Security Notes
 
-### 5. Estate (Legal)
+Responses include security headers from [app.js](app.js):
 
-Covers legal and estate-planning documents and wishes.
+- `X-Content-Type-Options: nosniff`
+- `X-Frame-Options: DENY`
+- `X-XSS-Protection: 1; mode=block`
+- CSP restricting resource origins (`self` + approved CDNs)
 
-- **Will status & details**
-- **Power of Attorney**
-- **Trusts**
-- **Beneficiary designations**
-- **Inheritance tax considerations**
-- **Key legal contacts (solicitor, executor)**
+Input handling includes:
 
----
+- Request body size limits
+- Basic sanitization for text fields
+- Date validation for relevant fields
+- Currency whitelist checks
 
-### 6. Intangibles
+## Data Model
 
-Captures the non-physical, often overlooked factors that influence long-term financial health.
+Database schema is defined in [database/schema.sql](database/schema.sql).
 
-- **Skills & qualifications** (certifications, degrees — earning potential)
-- **Professional network & reputation**
-- **Intellectual property** (patents, trademarks, digital content)
-- **Brand & online presence** (social-media reach, personal brand value)
-- **Financial literacy score** (self-assessed knowledge & goals)
-- **Health & wellbeing index** (lifestyle factors that affect future costs)
+Tables:
 
-### 7. Signing Up
+- `users`
+- `income`
+- `assets`
+- `liabilities`
+- `protection`
+- `estate`
+- `intangibles`
 
-Setting Up the account, or creating a new account for a new user. 
-
-- **Login in with email address** (Adding Username and password)
-- **Seperate Sign Up Page** (Having a seperate place for new users to create their accounts)
-
----
-
-## How Each Page Works
-
-### 1. Income & Tax — Mechanisms
-
-- **Input forms** let users enter income sources (salary, freelance, investments, rental) with amounts and frequency (weekly/monthly/annual).
-- On submission, the form POSTs to `/income` which runs an `INSERT INTO income` query to store the entry in SQLite.
-- **Tax calculator** applies UK income tax bands, National Insurance rates, and personal allowance automatically using server-side JavaScript.
-- Deductions are subtracted to show a **net take-home pay** figure, calculated via SQL aggregation queries.
-- All values stored in the `income` table in the SQLite database, scoped to the logged-in user via `user_id`.
-
-### 2. Assets — Mechanisms
-
-- Users **add asset entries** via a form — selecting a category (cash, investments, property, vehicles, valuables) and entering a value.
-- The form POSTs to `/assets`, which inserts a row into the `assets` table in SQLite.
-- Each asset is rendered as a card/row in a list; edit and delete actions trigger `UPDATE` and `DELETE` queries respectively.
-- A **dashboard section** uses `SELECT SUM(value) ... GROUP BY category` to display a breakdown (e.g. pie chart or bar chart via Canvas/JS).
-- Totals update on each page load by querying the database.
-
-### 3. Liabilities — Mechanisms
-
-- Similar CRUD mechanism to Assets — users add liabilities by category (mortgage, student loan, credit card, etc.) with outstanding balance and optional interest rate. Data is stored in the `liabilities` table.
-- A **debt-to-asset ratio** is calculated automatically via SQL: `SELECT SUM(balance) FROM liabilities` divided by `SELECT SUM(value) FROM assets`, both filtered by `user_id`.
-- Visual indicators (green/amber/red) flag healthy vs. concerning ratios.
-
-### 4. Protection — Mechanisms
-
-- Users log insurance policies via a form: type, provider, premium amount, start date, renewal date. Data is stored in the `protection` table.
-- A **renewal tracker** highlights upcoming renewals using the SQL query: `SELECT * FROM protection WHERE user_id = ? AND renewal_date BETWEEN DATE('now') AND DATE('now', '+30 days')`.
-- Policies displayed as cards with status badges (active / expiring soon / expired).
-- Premium totals are calculated via `SELECT SUM(premium) FROM protection WHERE user_id = ?` to show monthly/annual protection costs.
-
-### 5. Estate — Mechanisms
-
-- Checklist-style UI — users mark items as complete/incomplete (e.g. "Will: ✓ drafted", "Power of Attorney: ✗ not set up"). Status changes trigger an `UPDATE estate SET status = ? WHERE id = ? AND user_id = ?` query.
-- Text fields capture key details: solicitor name/contact, executor, beneficiary names — stored in the `estate` table.
-- An **inheritance tax estimator** pulls total asset value from the database (`SELECT SUM(value) FROM assets WHERE user_id = ?`) and applies the UK nil-rate band (£325k) to estimate potential IHT liability.
-- Progress bar shows overall estate-planning completeness, calculated via `SELECT COUNT(*), SUM(CASE WHEN status = 'complete' THEN 1 ELSE 0 END) FROM estate WHERE user_id = ?`.
-
-### 6. Intangibles — Mechanisms
-
-- Self-assessment sliders/forms for subjective metrics (financial literacy, health index, network strength) scored 1–10. Scores are stored in the `intangibles` table.
-- Text entries for qualifications, IP holdings, and brand/online presence links.
-- A **radar/spider chart** (drawn with Canvas or SVG) visualises scores across all intangible categories, populated by `SELECT category, score FROM intangibles WHERE user_id = ?`.
-- Summary card shows an overall "intangible wealth" score via `SELECT AVG(score) FROM intangibles WHERE user_id = ?`.
-
-### 7. Sign Up & Login — Mechanisms
-
-#### Sign Up (`/signup`)
-
-- **Registration form** with fields: email address, username, password, and confirm password.
-- **Client-side validation** checks email format (regex), password strength (minimum 8 characters, mixed case, numbers), and that both password fields match.
-- **Password hashing** uses `bcrypt` on the server to hash passwords before storing — plaintext passwords are never saved.
-- **Duplicate check** — on submission, the server runs `SELECT COUNT(*) FROM users WHERE email = ?` to prevent duplicate registrations.
-- **User storage** — accounts are stored in the `users` table in SQLite with columns: `id`, `email`, `username`, `password_hash`, `created_at`.
-- **Success flow** — after successful registration the user is redirected to the login page.
-
-#### Login (`/login`)
-
-- **Login form** with email and password fields.
-- **Credential verification** — the server fetches the user with `SELECT id, username, password_hash FROM users WHERE email = ?` and uses `bcrypt.compare()` to verify the password.
-- **Session management** — on successful login, an Express session (`express-session`) stores the user's `id` and `username` server-side. A session cookie is sent to the browser.
-- **Error handling** — inline error messages are displayed for incorrect email or password.
-- **Logout** — a logout button in the shared `<nav>` hits `GET /logout`, which calls `req.session.destroy()` and redirects to `/login`.
-
-#### Auth Guard (all protected routes)
-
-- An Express **middleware function** (`requireAuth`) checks if `req.session.userId` exists before allowing access to any protected route. If no valid session is found, the user is redirected to `/login`.
-
-#### User-Scoped Data (impact on all sub-pages)
-
-- All database tables include a `user_id` foreign key referencing `users.id`.
-- Every `SELECT`, `INSERT`, `UPDATE`, and `DELETE` query filters by `WHERE user_id = ?` using the session's `req.session.userId`.
-- This means Income & Tax, Assets, Liabilities, Protection, Estate, and Intangibles data are all isolated per-user at the database level and never mixed between accounts.
-
-#### Nav Bar Updates
-
-- The shared `<nav>` displays the **logged-in username** and a **Logout** link when authenticated.
-- **Sign Up** and **Login** links are hidden when the user is already logged in.
-- The **Dashboard** greeting is personalised: *"Welcome back, [username]"*.
-
-### Cross-Page Mechanisms
-
-| Mechanism | How It Works |
-|---|---|
-| **Data persistence** | All user data stored in a **SQLite database** across 7 tables, each linked to the `users` table via a `user_id` foreign key. |
-| **Navigation** | Shared `<nav>` partial/template across all pages links to each sub-page and the dashboard. |
-| **Dashboard (`/`)** | The server runs aggregate SQL queries across all tables (assets, liabilities, income, protection, estate, intangibles) and renders a unified financial snapshot — net worth, income summary, protection status. |
-| **Server routes** | Express routes in organised route files handle GET (display) and POST (create/update/delete) requests for each sub-page. |
-| **Responsive layout** | CSS media queries ensure all forms, tables, and charts adapt to mobile/tablet/desktop. |
-| **Form validation** | Client-side JavaScript validates required fields, numeric inputs, and date formats. Server-side validation provides a second layer of checks before running SQL queries. |
-| **Authentication** | `bcrypt` hashes passwords on sign-up. Login compares hashes and creates an Express session. A `requireAuth` middleware protects all sub-page routes. |
-| **Session management** | Express sessions (`express-session`) store the logged-in user's ID server-side. Sessions expire when the browser is closed or after a configurable timeout. |
-
----
-
-## Tech Stack
-
-- **Node.js** — server-side JavaScript runtime
-- **Express** — web framework for routing & middleware
-- **SQLite** (`better-sqlite3`) — lightweight file-based relational database
-- **EJS** — templating engine for rendering HTML views
-- **bcryptjs** — password hashing
-- **express-session** — server-side session management
-- **HTML5** — semantic page structure
-- **CSS3** — styling and responsive layout
-- **JavaScript** — client-side interactivity (form validation, charts)
-
----
+All finance tables include `user_id` for per-user isolation.
 
 ## Project Structure
 
-```
-Web_Assigment/
-├── app.js                    # Express app entry point
-├── package.json              # Dependencies & scripts
-├── database.js               # SQLite setup & table creation
-├── .gitignore                # Ignores node_modules, .db files
+```text
+Uni-Web-Application-Personal-Financial-Assistance-/
+├── app.js
+├── database.js
+├── package.json
+├── README.md
 ├── database/
-│   └── schema.sql            # SQL schema (all 7 CREATE TABLE statements)
-├── routes/
-│   └── auth.js               # Login, signup, logout routes
-├── views/
-│   ├── partials/
-│   │   └── navbar.ejs        # Shared navigation bar
-│   ├── dashboard.ejs         # Landing / dashboard page
-│   ├── login.ejs             # Login page
-│   └── signup.ejs            # Sign-up page
-├── public/
-│   └── css/
-│       └── style.css         # Global stylesheet
+│   ├── schema.sql
+│   └── seed.sql
 ├── data/
-│   └── finance.db            # SQLite database file (auto-created)
-├── planning-guide.md         # Full planning document & SQL queries
-├── Database_Diagram.pdf      # ER diagram export
-└── README.md
-```
-
-### Planned (not yet implemented)
-
-```
-├── middleware/
-│   └── auth.js               # requireAuth session middleware
+│   └── finance.db (created at runtime)
 ├── routes/
-│   ├── dashboard.js          # Dashboard (GET /)
-│   ├── income.js             # Income & Tax CRUD
-│   ├── assets.js             # Assets CRUD
-│   ├── liabilities.js        # Liabilities CRUD
-│   ├── protection.js         # Protection CRUD
-│   ├── estate.js             # Estate CRUD
-│   └── intangibles.js        # Intangibles CRUD
-├── views/
-│   ├── income.ejs            # 1. Income & Tax
-│   ├── assets.ejs            # 2. Assets
-│   ├── liabilities.ejs       # 3. Liabilities
-│   ├── protection.ejs        # 4. Protection (Insurance)
-│   ├── estate.ejs            # 5. Estate (Legal)
-│   └── intangibles.ejs       # 6. Intangibles
-└── public/
-    └── js/
-        └── main.js           # Client-side scripts (charts, validation)
+│   └── auth.js (legacy Express-style route file, not wired into current server)
+└── templates/
+    ├── Welcome_Page/
+    ├── Auth/
+    ├── Dashboard/
+    ├── Income/
+    ├── Assets/
+    ├── Liabilities/
+    ├── Protection/
+    ├── Estate/
+    └── Intangibles/
 ```
-
----
 
 ## Getting Started
 
-1. Clone or download the repository.
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Start the server:
-   ```bash
-   npm start
-   ```
-   Or run directly:
-   ```bash
-   node app.js
-   ```
-4. Open `http://localhost:3000` in your browser.
-5. Create an account on the Sign Up page, then log in.
+1. Install dependencies:
 
-> **Note:** The database (`data/finance.db`) is created automatically on first run. All 7 tables are set up via `database/schema.sql`.
+```bash
+npm install
+```
 
----
+2. Start the server:
 
-## Author
+```bash
+npm start
+```
 
-Hamza — DMU Module 7 Web Assignment
+or:
 
-Shivam — DMU Module 7 Web Assignment
+```bash
+node app.js
+```
 
-Rudra — DMU Module 7 Web Assignment
+3. Open:
+
+```text
+http://localhost:3000
+```
+
+The server automatically retries higher ports if `3000` is busy (up to 10 retries).
+
+## API Summary
+
+- `GET /api/me`
+- `POST /api/signup`
+- `POST /api/login`
+- `GET /api/logout`
+- `POST /api/preferences`
+- `GET /api/exchange-rates`
+- `GET /api/dashboard`
+- CRUD endpoints for each finance table under `/api/<table>`
+
+## Authors
+
+- Hamza (P2840014)
+- Shivam (P2839138)
+- Rudra (P2896774)
