@@ -184,8 +184,8 @@
                 </article>
 
                 <div class="form-actions">
-                    <button type="button" class="btn-primary" onclick="saveIntangibles()">Save Assessment</button>
-                    <button type="button" class="btn-secondary" onclick="resetForm()">Reset Form</button>
+                    <button id="saveAssessmentBtn" type="button" class="btn-primary">Save Assessment</button>
+                    <button id="resetFormBtn" type="button" class="btn-secondary">Reset Form</button>
                 </div>
             </form>
         </section>
@@ -195,8 +195,8 @@
             <h2>Intangible Wealth Analysis</h2>
 
             <nav class="tabs">
-                <button class="tab-btn active" onclick="switchTab('overview')">Overview</button>
-                <button class="tab-btn" onclick="switchTab('breakdown')">Breakdown</button>
+                <button class="tab-btn active" data-tab="overview">Overview</button>
+                <button class="tab-btn" data-tab="breakdown">Breakdown</button>
             </nav>
 
             <!-- Overview Tab -->
@@ -228,7 +228,7 @@
     <div id="validationModal" class="modal" style="display: none;">
         <div class="modal-content">
             <p id="modalMessage"></p>
-            <button onclick="closeModal()">OK</button>
+            <button id="modalOkBtn">OK</button>
         </div>
     </div>
 

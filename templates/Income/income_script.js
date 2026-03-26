@@ -209,7 +209,7 @@ async function addIncome() {
         showModal('Income added successfully!');
     } catch (error) {
         console.error('Failed to add income:', error);
-        alert('Failed to add income. Please try again.');
+        showModal('Failed to add income: ' + error.message);
     }
 }
 
@@ -281,11 +281,18 @@ function updateIncomeList() {
                 <div class="income-item-amount">${displayAmount}</div>
             </div>
             <div class="income-item-actions">
-                <button class="btn-danger" onclick="removeIncome(${entry.id})">Delete</button>
+                <button class="btn-danger remove-income-btn" data-id="${entry.id}">Delete</button>
             </div>
         </div>
     `;
     }).join('');
+
+    listContainer.querySelectorAll('.remove-income-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const id = btn.getAttribute('data-id');
+            if (id) removeIncome(Number(id));
+        });
+    });
 
     scrollHint.style.display = listContainer.scrollHeight > 400 ? 'block' : 'none';
 }
@@ -368,8 +375,14 @@ function updateConverter() {
     const currencies = ['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'INR', 'AED'];
 
     selector.innerHTML = currencies.map(curr => `
-        <button class="currency-btn" onclick="showConversion('${curr}', this)">${curr}</button>
+        <button class="currency-btn" data-currency="${curr}">${curr}</button>
     `).join('');
+
+    selector.querySelectorAll('.currency-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            showConversion(btn.getAttribute('data-currency'), btn);
+        });
+    });
 }
 
 // Show conversion for selected currency
@@ -790,10 +803,28 @@ function switchTab(tabName) {
 // Initialize
 document.addEventListener('DOMContentLoaded', async function() {
     const user = await requireUser();
+
+    const addBtn = document.getElementById('addIncomeBtn');
+    const clearBtn = document.getElementById('clearFormBtn');
+    const currencySelect = document.getElementById('displayCurrencySelect');
+    const modalOkBtn = document.getElementById('modalOkBtn');
+    const tabButtons = document.querySelectorAll('.tab-btn');
+
+    if (addBtn) addBtn.addEventListener('click', addIncome);
+    if (clearBtn) clearBtn.addEventListener('click', clearForm);
+    if (modalOkBtn) modalOkBtn.addEventListener('click', closeModal);
+    if (currencySelect) currencySelect.addEventListener('change', (event) => changeDisplayCurrency(event.target.value));
+    tabButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tabName = btn.getAttribute('data-tab');
+            if (tabName) switchTab(tabName);
+        });
+    });
+
     if (user) {
         clearForm();
-        updateConverter();
         await loadIncomeData();
+        updateConverter();
     }
 });
 

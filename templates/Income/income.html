@@ -29,7 +29,7 @@
         <!-- Display Currency Selector -->
         <section class="currency-selector-section">
             <label for="displayCurrencySelect">View All Data In:</label>
-            <select id="displayCurrencySelect" onchange="changeDisplayCurrency(this.value)">
+            <select id="displayCurrencySelect">
                 <option value="USD">USD</option>
                 <option value="EUR">EUR</option>
                 <option value="GBP">GBP</option>
@@ -111,8 +111,8 @@
                 </div>
 
                 <div class="form-actions">
-                    <button type="button" class="btn-primary" onclick="addIncome()">Add Income</button>
-                    <button type="button" class="btn-secondary" onclick="clearForm()">Clear Form</button>
+                    <button id="addIncomeBtn" type="button" class="btn-primary">Add Income</button>
+                    <button id="clearFormBtn" type="button" class="btn-secondary">Clear Form</button>
                 </div>
             </form>
 
@@ -133,9 +133,9 @@
             <h2>Tax Calculator & Analysis</h2>
 
             <nav class="tabs">
-                <button class="tab-btn active" onclick="switchTab('summary')">Summary</button>
-                <button class="tab-btn" onclick="switchTab('breakdown')">Breakdown</button>
-                <button class="tab-btn" onclick="switchTab('converter')">Converter</button>
+                <button class="tab-btn active" data-tab="summary">Summary</button>
+                <button class="tab-btn" data-tab="breakdown">Breakdown</button>
+                <button class="tab-btn" data-tab="converter">Converter</button>
             </nav>
 
             <!-- Summary Tab -->
@@ -189,7 +189,7 @@
     <div id="validationModal" class="modal" style="display: none;">
         <div class="modal-content">
             <p id="modalMessage"></p>
-            <button onclick="closeModal()">OK</button>
+            <button id="modalOkBtn">OK</button>
         </div>
     </div>
 

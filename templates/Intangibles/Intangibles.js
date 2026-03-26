@@ -292,6 +292,21 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (!user) return;
 
         initializeSliders();
+
+        const saveBtn = document.getElementById('saveAssessmentBtn');
+        const resetBtn = document.getElementById('resetFormBtn');
+        const modalOkBtn = document.getElementById('modalOkBtn');
+        const tabButtons = document.querySelectorAll('.tab-btn');
+
+        if (saveBtn) saveBtn.addEventListener('click', saveIntangibles);
+        if (resetBtn) resetBtn.addEventListener('click', resetForm);
+        if (modalOkBtn) modalOkBtn.addEventListener('click', closeModal);
+        tabButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tabName = btn.getAttribute('data-tab');
+                if (tabName) switchTab(tabName);
+            });
+        });
         
         // Load existing data
         await fetchIntangibles();
