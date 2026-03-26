@@ -22,6 +22,12 @@ if (!userCols.some(col => col.name === 'preferred_currency')) {
 }
 db.exec("UPDATE users SET preferred_currency = 'GBP' WHERE preferred_currency IS NULL OR preferred_currency NOT IN ('USD', 'GBP', 'EUR', 'INR', 'CAD', 'AUD', 'AED')");
 
+// Lightweight migration for existing DB files - add currency column to income if missing
+const incomeCols = db.prepare("PRAGMA table_info(income)").all();
+if (!incomeCols.some(col => col.name === 'currency')) {
+    db.exec("ALTER TABLE income ADD COLUMN currency TEXT DEFAULT 'USD'");
+}
+
 // Run seed data if the file exists
 const seedPath = path.join(__dirname, 'database', 'seed.sql');
 if (fs.existsSync(seedPath)) {

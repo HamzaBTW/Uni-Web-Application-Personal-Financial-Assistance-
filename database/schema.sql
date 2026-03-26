@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS income (
     source_type TEXT,
     description TEXT,
     amount REAL NOT NULL,
+    currency TEXT DEFAULT 'USD',
     frequency TEXT,
     tax_band TEXT,
     FOREIGN KEY (user_id) REFERENCES users(id)

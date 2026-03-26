@@ -49,7 +49,7 @@ function securityHeaders() {
         'X-Content-Type-Options': 'nosniff',
         'X-Frame-Options': 'DENY',
         'X-XSS-Protection': '1; mode=block',
-        'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'",
+        'Content-Security-Policy': "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data:; font-src 'self' https://fonts.gstatic.com",
     };
 }
 
@@ -421,6 +421,23 @@ const server = http.createServer(async (req, res) => {
     if (estateMatch === true) return;
     if (estateMatch) return executeCrud('estate', estateCols, estateMatch);
 
+    // ─── INCOME CRUD ───
+    const incomeCols = [
+        { name: 'source_type' }, { name: 'description' }, { name: 'amount' },
+        { name: 'currency' }, { name: 'frequency' }, { name: 'tax_band' }
+    ];
+    const incomeMatch = handleCrud('income');
+    if (incomeMatch === true) return;
+    if (incomeMatch) return executeCrud('income', incomeCols, incomeMatch);
+
+    // ─── INTANGIBLES CRUD ───
+    const intangiblesCols = [
+        { name: 'category' }, { name: 'score' }, { name: 'description' }
+    ];
+    const intangiblesMatch = handleCrud('intangibles');
+    if (intangiblesMatch === true) return;
+    if (intangiblesMatch) return executeCrud('intangibles', intangiblesCols, intangiblesMatch);
+
     // ─── ASSETS CRUD ───
     const assetCols = [
         { name: 'category' }, { name: 'description' }, { name: 'value' }
@@ -473,15 +490,19 @@ const server = http.createServer(async (req, res) => {
     if (pathname === '/login') return redirect(res, '/auth.html?tab=login');
     if (pathname === '/signup') return redirect(res, '/auth.html?tab=signup');
     if (pathname === '/dashboard') return redirect(res, '/dashboard.html');
+    if (pathname === '/income') return redirect(res, '/income.html');
+    if (pathname === '/intangibles') return redirect(res, '/Intangibles.html');
     if (pathname === '/logout') return redirect(res, '/api/logout');
 
     const protectedPages = new Set([
         '/dashboard.html',
         '/income.html',
+        '/Income.html',
         '/assets.html',
         '/liabilities.html',
         '/protection.html',
         '/estate.html',
+        '/Intangibles.html',
         '/intangibles.html'
     ]);
 
@@ -501,6 +522,8 @@ const server = http.createServer(async (req, res) => {
         path.join(__dirname, 'templates', 'Liabilities', stripped),
         path.join(__dirname, 'templates', 'Protection', stripped),
         path.join(__dirname, 'templates', 'Estate', stripped),
+        path.join(__dirname, 'templates', 'Income', stripped),
+        path.join(__dirname, 'templates', 'Intangibles', stripped),
         path.join(__dirname, 'templates', stripped),
     ];
     for (const f of candidates) {
