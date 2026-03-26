@@ -132,16 +132,21 @@ const taxBrackets = {
     ]
 };
 
-// Exchange rates (approximate, for demonstration)
-const exchangeRates = {
+const SUPPORTED_CURRENCIES = ['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'INR', 'AED'];
+const DEFAULT_RATES = {
     USD: 1,
+    GBP: 0.78,
     EUR: 0.92,
-    GBP: 0.79,
-    CAD: 1.36,
-    AUD: 1.53,
-    INR: 83.12,
+    INR: 83.2,
+    CAD: 1.35,
+    AUD: 1.52,
     AED: 3.67
 };
+
+// Exchange rates follow the same server-backed system used by the Assets page.
+let exchangeRates = { ...DEFAULT_RATES };
+let exchangeRatesAsOf = null;
+let exchangeRateSource = 'fallback';
 
 let incomeEntries = [];
 let displayCurrency = 'USD'; // Current currency to display all values in
@@ -155,6 +160,117 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+/**
+ * Build a complete rates object for supported currencies.
+ * @param {Object} sourceRates - Raw rates object keyed by currency code.
+ * @returns {Object|null} Normalized rates map or null when required currencies are missing/invalid.
+ */
+function normalizeRates(sourceRates) {
+    if (!sourceRates || typeof sourceRates !== 'object') {
+        return null;
+    }
+
+    const normalized = { USD: 1 };
+    for (const currency of SUPPORTED_CURRENCIES) {
+        if (currency === 'USD') continue;
+        const value = Number(sourceRates[currency]);
+        if (!Number.isFinite(value) || value <= 0) {
+            return null;
+        }
+        normalized[currency] = value;
+    }
+
+    return normalized;
+}
+
+/**
+ * Get a safe exchange rate for a currency.
+ * @param {string} currency - ISO currency code.
+ * @returns {number} Rate in units per USD; defaults to 1 when unavailable.
+ */
+function getExchangeRate(currency) {
+    const rate = Number(exchangeRates[currency]);
+    return Number.isFinite(rate) && rate > 0 ? rate : 1;
+}
+
+/**
+ * Apply exchange rates and update metadata text in the UI.
+ * @param {Object} rates - Normalized rates map.
+ * @param {string|Date|null} asOf - Timestamp from provider.
+ * @param {string} source - Source label.
+ */
+function applyExchangeRates(rates, asOf, source) {
+    exchangeRates = rates;
+    exchangeRatesAsOf = asOf;
+    exchangeRateSource = source;
+    updateExchangeRatesMeta();
+}
+
+/**
+ * Render exchange-rate status metadata for users.
+ * @param {string} statusMessage - Additional status text.
+ * @param {boolean} isError - Whether status represents an error state.
+ */
+function updateExchangeRatesMeta(statusMessage = '', isError = false) {
+    const ratesAsOfEl = document.getElementById('ratesAsOf');
+    const ratesStatusEl = document.getElementById('ratesStatus');
+
+    if (ratesAsOfEl) {
+        if (exchangeRatesAsOf) {
+            const asOfDate = new Date(exchangeRatesAsOf);
+            ratesAsOfEl.textContent = Number.isNaN(asOfDate.getTime())
+                ? 'Rates as of: unknown'
+                : `Rates as of: ${asOfDate.toLocaleString()}`;
+        } else {
+            ratesAsOfEl.textContent = 'Rates as of: unavailable';
+        }
+    }
+
+    if (ratesStatusEl) {
+        const sourceText = exchangeRateSource === 'live' ? 'Live rates' : 'Fallback rates';
+        ratesStatusEl.textContent = [sourceText, statusMessage].filter(Boolean).join(' | ');
+        ratesStatusEl.classList.toggle('error', isError);
+    }
+}
+
+/**
+ * Ensure conversion logic can run even if live fetch/config are unavailable.
+ */
+function applyFallbackRates() {
+    applyExchangeRates({ ...DEFAULT_RATES }, new Date(), 'fallback');
+}
+
+/**
+ * Load exchange rates from a live API with a safe fallback path.
+ */
+async function loadExchangeRates() {
+    const endpoint = '/api/exchange-rates';
+
+    try {
+        const response = await fetch(endpoint);
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+        const normalized = normalizeRates(data.rates);
+        if (!normalized) {
+            throw new Error('API did not return all required currencies');
+        }
+
+        const source = data.source === 'live' ? 'live' : 'fallback';
+        const timestamp = data.updatedAt || new Date();
+        applyExchangeRates(normalized, timestamp, source);
+        updateExchangeRatesMeta(source === 'live' ? 'Loaded from server cache.' : 'Server fallback rates in use.');
+        return;
+    } catch (error) {
+        console.error('Failed to load live exchange rates:', error);
+    }
+
+    applyFallbackRates();
+    updateExchangeRatesMeta('Could not reach rates endpoint. Using fallback rates.', true);
 }
 
 /**
@@ -348,7 +464,9 @@ function updateIncomeList() {
                 <p>No income entries yet. Add one to get started!</p>
             </article>
         `;
-        scrollHint.style.display = 'none';
+        if (scrollHint) {
+            scrollHint.style.display = 'none';
+        }
         return;
     }
 
@@ -375,7 +493,9 @@ function updateIncomeList() {
         });
     });
 
-    scrollHint.style.display = listContainer.scrollHeight > 400 ? 'block' : 'none';
+    if (scrollHint) {
+        scrollHint.style.display = listContainer.scrollHeight > 400 ? 'block' : 'none';
+    }
 }
 
 /**
@@ -391,7 +511,7 @@ function updateTaxCalculations() {
     incomeEntries.forEach(entry => {
         const amt = Number(entry.amount || 0);
         const curr = entry.currency || 'USD';
-        const rate = exchangeRates[curr] || 1; // rate = units per USD
+        const rate = getExchangeRate(curr); // rate = units per USD
         
         // Convert to USD for total
         const amtUsd = rate && rate !== 0 ? (amt / rate) : amt;
@@ -404,7 +524,7 @@ function updateTaxCalculations() {
     });
     
     // Convert display values to selected display currency
-    const displayRate = exchangeRates[displayCurrency] || 1;
+    const displayRate = getExchangeRate(displayCurrency);
     const totalIncomeDisplay = displayRate && displayRate !== 0 ? (totalIncomeUsd * displayRate) : totalIncomeUsd;
     const totalTaxDisplay = displayRate && displayRate !== 0 ? (totalTaxUsd * displayRate) : totalTaxUsd;
     const netIncomeDisplay = totalIncomeDisplay - totalTaxDisplay;
@@ -431,7 +551,7 @@ function updateTaxCalculations() {
     incomeEntries.forEach(entry => {
         const amt = Number(entry.amount || 0);
         const curr = entry.currency || 'USD';
-        const exRate = exchangeRates[curr] || 1;
+        const exRate = getExchangeRate(curr);
         const amtUsd = exRate && exRate !== 0 ? (amt / exRate) : amt;
         const amtDisplay = displayRate && displayRate !== 0 ? (amtUsd * displayRate) : amtUsd;
         
@@ -463,7 +583,7 @@ function updateTaxCalculations() {
  */
 function updateConverter() {
     const selector = document.getElementById('currencySelector');
-    const currencies = ['USD', 'EUR', 'GBP', 'CAD', 'AUD', 'INR', 'AED'];
+    const currencies = SUPPORTED_CURRENCIES;
 
     selector.innerHTML = currencies.map(curr => `
         <button class="currency-btn" data-currency="${curr}">${curr}</button>
@@ -508,7 +628,7 @@ function showConversion(selectedCurrency, buttonElement) {
     incomeEntries.forEach(entry => {
         const amt = Number(entry.amount || 0);
         const curr = entry.currency || 'USD';
-        const rate = exchangeRates[curr] || 1;
+        const rate = getExchangeRate(curr);
         const amtUsd = rate && rate !== 0 ? (amt / rate) : amt;
         totalIncomeUsd += amtUsd;
         
@@ -518,9 +638,9 @@ function showConversion(selectedCurrency, buttonElement) {
     });
     
     // Convert from display currency to selected currency
-    const displayRate = exchangeRates[displayCurrency] || 1;
+    const displayRate = getExchangeRate(displayCurrency);
     const totalIncomeDisplay = displayRate && displayRate !== 0 ? (totalIncomeUsd * displayRate) : totalIncomeUsd;
-    const selectedRate = exchangeRates[selectedCurrency] || 1;
+    const selectedRate = getExchangeRate(selectedCurrency);
     const totalIncomeSelected = selectedRate && selectedRate !== 0 ? (totalIncomeUsd * selectedRate) : totalIncomeUsd;
     
     const taxDisplayConverted = displayRate && displayRate !== 0 ? (totalTaxUsd * displayRate) : totalTaxUsd;
@@ -565,7 +685,7 @@ function updateCharts() {
         const source = entry.source_type || entry.description || 'Other';
         const amt = Number(entry.amount || 0);
         const curr = entry.currency || 'USD';
-        const rate = exchangeRates[curr] || 1;
+        const rate = getExchangeRate(curr);
         // Convert to USD
         const amtUsd = rate && rate !== 0 ? (amt / rate) : amt;
         
@@ -576,7 +696,7 @@ function updateCharts() {
     });
     
     // Convert to display currency
-    const displayRate = exchangeRates[displayCurrency] || 1;
+    const displayRate = getExchangeRate(displayCurrency);
     const bySource = {};
     Object.keys(bySourceUsd).forEach(source => {
         bySource[source] = displayRate && displayRate !== 0 ? (bySourceUsd[source] * displayRate) : bySourceUsd[source];
@@ -671,7 +791,7 @@ function updateTaxVsNetChart(bySourceUsd) {
             if ((entry.source_type || entry.description || 'Other') === source) {
                 const amt = Number(entry.amount || 0);
                 const curr = entry.currency || 'USD';
-                const rate = exchangeRates[curr] || 1;
+                const rate = getExchangeRate(curr);
                 const amtUsd = rate && rate !== 0 ? (amt / rate) : amt;
                 sourceIncomeUsd += amtUsd;
                 
@@ -691,7 +811,7 @@ function updateTaxVsNetChart(bySourceUsd) {
         taxChartInstance.destroy();
     }
 
-    const displayRate = exchangeRates[displayCurrency] || 1;
+    const displayRate = getExchangeRate(displayCurrency);
     const netDataDisplay = netData.map(val => displayRate && displayRate !== 0 ? (val * displayRate) : val);
     const taxDataDisplay = taxData.map(val => displayRate && displayRate !== 0 ? (val * displayRate) : val);
     const currencySymbol = getCurrencySymbol(displayCurrency);
@@ -831,7 +951,7 @@ function updateTaxRateAnalysisChart(bySource) {
             if ((entry.source_type || entry.description || 'Other') === source) {
                 const amt = Number(entry.amount || 0);
                 const curr = entry.currency || 'USD';
-                const rate = exchangeRates[curr] || 1;
+                const rate = getExchangeRate(curr);
 
                 // Convert amount to USD
                 const amtUsd = rate && rate !== 0 ? (amt / rate) : amt;
@@ -964,6 +1084,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     if (user) {
         clearForm();
+        await loadExchangeRates();
         await loadIncomeData();
         updateConverter();
     }
