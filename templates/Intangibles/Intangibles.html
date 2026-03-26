@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Intangibles</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="Intangibles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <a href="/dashboard.html" class="brand">Financial Assistant</a>
+        <div id="nav-links">
+            <a href="/dashboard.html">Dashboard</a>
+            <a href="/Income.html">Income</a>
+            <a href="/assets.html">Assets</a>
+            <a href="/liabilities.html">Liabilities</a>
+            <a href="/protection.html">Protection</a>
+            <a href="/estate.html">Estate</a>
+            <a href="/Intangibles.html" class="active">Intangibles</a>
+            <a href="/api/logout" id="logout-link">Logout</a>
+        </div>
+    </nav>
+
+    <main class="container">
+        <h1 class="page-title">Intangibles</h1>
+        <p class="subtitle">Welcome, <span id="username"></span>. Assess and track your intangible assets for comprehensive wealth management.</p>
+
+        <!-- Charts Section -->
+        <section class="charts-section" id="chartsSection" style="display: none;">
+            <article class="chart-card">
+                <h3>Intangible Wealth Score</h3>
+                <figure class="chart-container">
+                    <canvas id="radarChart"></canvas>
+                </figure>
+                <aside class="chart-legend" id="radarLegend"></aside>
+            </article>
+
+            <article class="chart-card">
+                <h3>Overall Intangible Wealth</h3>
+                <section class="summary-grid">
+                    <article class="summary-item">
+                        <p class="summary-label">Average Score</p>
+                        <p class="summary-value" id="averageScore">0/10</p>
+                    </article>
+                    <article class="summary-item">
+                        <p class="summary-label">Wealth Level</p>
+                        <p class="summary-value" id="wealthLevel">None</p>
+                    </article>
+                </section>
+            </article>
+        </section>
+
+        <!-- Assessment Form -->
+        <section class="panel">
+            <h2>Intangible Assets Assessment</h2>
+            <p class="panel-description">Rate and describe your intangible assets across different categories. These non-physical factors significantly influence your long-term financial health.</p>
+
+            <form class="assessment-form" id="assessmentForm">
+                <!-- Skills & Qualifications -->
+                <article class="form-section">
+                    <h3>Skills & Qualifications</h3>
+                    <p class="section-description">Certifications, degrees, and professional development</p>
+
+                    <div class="form-row">
+                        <label>
+                            Description
+                            <textarea id="qualifications" placeholder="e.g., Bachelor's in Computer Science, Project Management Certification, AWS Solutions Architect..." maxlength="500"></textarea>
+                        </label>
+
+                        <label>
+                            Score (0-10)
+                            <div class="slider-container">
+                                <input type="range" id="skillsSlider" min="0" max="10" value="5" class="slider">
+                                <span class="slider-value" id="skillsValue">5</span>
+                            </div>
+                        </label>
+                    </div>
+                </article>
+
+                <!-- Professional Network & Reputation -->
+                <article class="form-section">
+                    <h3>Professional Network & Reputation</h3>
+                    <p class="section-description">Quality and strength of your professional connections</p>
+
+                    <div class="form-row">
+                        <label>
+                            Description
+                            <textarea id="networkDetails" placeholder="e.g., 1000+ LinkedIn connections, Industry speaker, Mentor to 5+ professionals..." maxlength="500"></textarea>
+                        </label>
+
+                        <label>
+                            Score (0-10)
+                            <div class="slider-container">
+                                <input type="range" id="networkSlider" min="0" max="10" value="5" class="slider">
+                                <span class="slider-value" id="networkValue">5</span>
+                            </div>
+                        </label>
+                    </div>
+                </article>
+
+                <!-- Intellectual Property -->
+                <article class="form-section">
+                    <h3>Intellectual Property</h3>
+                    <p class="section-description">Patents, trademarks, digital content, and proprietary knowledge</p>
+
+                    <div class="form-row">
+                        <label>
+                            Description
+                            <textarea id="ipHoldings" placeholder="e.g., 2 Patents pending, Trademark registered, 3 Software projects, Technical blog with 50K monthly readers..." maxlength="500"></textarea>
+                        </label>
+
+                        <label>
+                            Score (0-10)
+                            <div class="slider-container">
+                                <input type="range" id="ipSlider" min="0" max="10" value="5" class="slider">
+                                <span class="slider-value" id="ipValue">5</span>
+                            </div>
+                        </label>
+                    </div>
+                </article>
+
+                <!-- Brand & Online Presence -->
+                <article class="form-section">
+                    <h3>Brand & Online Presence</h3>
+                    <p class="section-description">Social media reach, personal brand, and digital influence</p>
+
+                    <div class="form-row">
+                        <label>
+                            Description
+                            <textarea id="brandPresence" placeholder="e.g., Instagram: 50K followers (@yourhandle), YouTube channel: tech tutorials, Personal website: www.yoursite.com..." maxlength="500"></textarea>
+                        </label>
+
+                        <label>
+                            Score (0-10)
+                            <div class="slider-container">
+                                <input type="range" id="brandSlider" min="0" max="10" value="5" class="slider">
+                                <span class="slider-value" id="brandValue">5</span>
+                            </div>
+                        </label>
+                    </div>
+                </article>
+
+                <!-- Financial Literacy -->
+                <article class="form-section">
+                    <h3>Financial Literacy</h3>
+                    <p class="section-description">Self-assessed knowledge and financial goals clarity</p>
+
+                    <div class="form-row">
+                        <label>
+                            Description
+                            <textarea id="financialGoals" placeholder="e.g., 5-year goal: $100K investments, Understanding: Tax optimization, Retirement planning..." maxlength="500"></textarea>
+                        </label>
+
+                        <label>
+                            Score (0-10)
+                            <div class="slider-container">
+                                <input type="range" id="literacySlider" min="0" max="10" value="5" class="slider">
+                                <span class="slider-value" id="literacyValue">5</span>
+                            </div>
+                        </label>
+                    </div>
+                </article>
+
+                <!-- Health & Wellbeing -->
+                <article class="form-section">
+                    <h3>Health & Wellbeing</h3>
+                    <p class="section-description">Lifestyle factors that affect future costs and productivity</p>
+
+                    <div class="form-row">
+                        <label>
+                            Description
+                            <textarea id="healthDetails" placeholder="e.g., Regular exercise (4x/week), Healthy diet, Good sleep (8 hrs), Stress management practices..." maxlength="500"></textarea>
+                        </label>
+
+                        <label>
+                            Score (0-10)
+                            <div class="slider-container">
+                                <input type="range" id="healthSlider" min="0" max="10" value="5" class="slider">
+                                <span class="slider-value" id="healthValue">5</span>
+                            </div>
+                        </label>
+                    </div>
+                </article>
+
+                <div class="form-actions">
+                    <button id="saveAssessmentBtn" type="button" class="btn-primary">Save Assessment</button>
+                    <button id="resetFormBtn" type="button" class="btn-secondary">Reset Form</button>
+                </div>
+            </form>
+        </section>
+
+        <!-- Analysis Section -->
+        <section class="panel">
+            <h2>Intangible Wealth Analysis</h2>
+
+            <nav class="tabs">
+                <button class="tab-btn active" data-tab="overview">Overview</button>
+                <button class="tab-btn" data-tab="breakdown">Breakdown</button>
+            </nav>
+
+            <!-- Overview Tab -->
+            <section id="overview" class="tab-content active">
+                <div class="summary-grid">
+                    <article class="summary-item">
+                        <p class="summary-label">Total Intangible Score</p>
+                        <p class="summary-value" id="totalScore">0/10</p>
+                    </article>
+                    <article class="summary-item">
+                        <p class="summary-label">Wealth Category</p>
+                        <p class="summary-value" id="category">Assess Now</p>
+                    </article>
+                </div>
+            </section>
+
+            <!-- Breakdown Tab -->
+            <section id="breakdown" class="tab-content">
+                <article class="breakdown-content" id="breakdownDetails">
+                    <h3>Score Breakdown by Category</h3>
+                    <figure class="empty-state">
+                        <p>Save your assessment to see detailed breakdown</p>
+                    </figure>
+                </article>
+            </section>
+        </section>
+    </main>
+
+    <div id="validationModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <p id="modalMessage"></p>
+            <button id="modalOkBtn">OK</button>
+        </div>
+    </div>
+
+    <script src="Intangibles.js"></script>
+</body>
+</html>

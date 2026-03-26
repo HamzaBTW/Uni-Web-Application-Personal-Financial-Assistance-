@@ -44,12 +44,21 @@ function buildSessionCookie(sid, maxAge = 7200) {
     });
 }
 
+/**
+ * Provide a set of HTTP security headers for responses.
+ *
+ * @returns {{[header: string]: string}} An object mapping header names to values:
+ * - `X-Content-Type-Options`: prevents MIME type sniffing (`nosniff`).
+ * - `X-Frame-Options`: disallows embedding in frames (`DENY`).
+ * - `X-XSS-Protection`: enables basic XSS protection in legacy browsers (`1; mode=block`).
+ * - `Content-Security-Policy`: restricts resource loading (self-only by default; allows scripts from https://cdn.jsdelivr.net, styles from https://fonts.googleapis.com and inline styles, fonts from https://fonts.gstatic.com, and images from self and data URIs).
+ */
 function securityHeaders() {
     return {
         'X-Content-Type-Options': 'nosniff',
         'X-Frame-Options': 'DENY',
         'X-XSS-Protection': '1; mode=block',
-        'Content-Security-Policy': "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'",
+        'Content-Security-Policy': "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data:; font-src 'self' https://fonts.gstatic.com",
     };
 }
 
@@ -371,6 +380,12 @@ const server = http.createServer(async (req, res) => {
                     return json(res, 400, { error: 'Dates must be valid and not beyond 2080-12-31.' });
                 }
             }
+            if (tableName === 'income') {
+                const currency = sanitizeInput(fields.currency);
+                if (currency && !isSupportedCurrency(currency)) {
+                    return json(res, 400, { error: 'Invalid currency code.' });
+                }
+            }
             const placeholders = colNames.map(() => '?').join(', ');
             const values = colNames.map(c => sanitizeInput(fields[c]));
             db.prepare(`INSERT INTO ${tableName} (user_id, ${colNames.join(', ')}) VALUES (?, ${placeholders})`).run(user.id, ...values);
@@ -389,6 +404,12 @@ const server = http.createServer(async (req, res) => {
                 const renewalDate = sanitizeInput(fields.renewal_date);
                 if (!validateDateNB(startDate) || !validateDateNB(renewalDate)) {
                     return json(res, 400, { error: 'Dates must be valid and not beyond 2080-12-31.' });
+                }
+            }
+            if (tableName === 'income') {
+                const currency = sanitizeInput(fields.currency);
+                if (currency && !isSupportedCurrency(currency)) {
+                    return json(res, 400, { error: 'Invalid currency code.' });
                 }
             }
             const sets = colNames.map(c => `${c} = ?`).join(', ');
@@ -420,6 +441,23 @@ const server = http.createServer(async (req, res) => {
     const estateMatch = handleCrud('estate');
     if (estateMatch === true) return;
     if (estateMatch) return executeCrud('estate', estateCols, estateMatch);
+
+    // ─── INCOME CRUD ───
+    const incomeCols = [
+        { name: 'source_type' }, { name: 'description' }, { name: 'amount' },
+        { name: 'currency' }, { name: 'frequency' }, { name: 'tax_band' }
+    ];
+    const incomeMatch = handleCrud('income');
+    if (incomeMatch === true) return;
+    if (incomeMatch) return executeCrud('income', incomeCols, incomeMatch);
+
+    // ─── INTANGIBLES CRUD ───
+    const intangiblesCols = [
+        { name: 'category' }, { name: 'score' }, { name: 'description' }
+    ];
+    const intangiblesMatch = handleCrud('intangibles');
+    if (intangiblesMatch === true) return;
+    if (intangiblesMatch) return executeCrud('intangibles', intangiblesCols, intangiblesMatch);
 
     // ─── ASSETS CRUD ───
     const assetCols = [
@@ -473,6 +511,8 @@ const server = http.createServer(async (req, res) => {
     if (pathname === '/login') return redirect(res, '/auth.html?tab=login');
     if (pathname === '/signup') return redirect(res, '/auth.html?tab=signup');
     if (pathname === '/dashboard') return redirect(res, '/dashboard.html');
+    if (pathname === '/income') return redirect(res, '/income.html');
+    if (pathname === '/intangibles') return redirect(res, '/Intangibles.html');
     if (pathname === '/logout') return redirect(res, '/api/logout');
 
     const protectedPages = new Set([
@@ -482,7 +522,7 @@ const server = http.createServer(async (req, res) => {
         '/liabilities.html',
         '/protection.html',
         '/estate.html',
-        '/intangibles.html'
+        '/Intangibles.html'
     ]);
 
     if (protectedPages.has(pathname)) {
@@ -501,6 +541,8 @@ const server = http.createServer(async (req, res) => {
         path.join(__dirname, 'templates', 'Liabilities', stripped),
         path.join(__dirname, 'templates', 'Protection', stripped),
         path.join(__dirname, 'templates', 'Estate', stripped),
+        path.join(__dirname, 'templates', 'Income', stripped),
+        path.join(__dirname, 'templates', 'Intangibles', stripped),
         path.join(__dirname, 'templates', stripped),
     ];
     for (const f of candidates) {
