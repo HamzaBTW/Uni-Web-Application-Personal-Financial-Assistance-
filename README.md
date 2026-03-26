@@ -106,7 +106,7 @@ Uni-Web-Application-Personal-Financial-Assistance-/
 ├── data/
 │   └── finance.db (created at runtime)
 ├── routes/
-│   └── auth.js (legacy Express-style route file, not wired into current server)
+│   └── auth.js 
 └── templates/
     ├── Welcome_Page/
     ├── Auth/
