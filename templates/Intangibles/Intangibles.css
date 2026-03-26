@@ -16,7 +16,7 @@ body {
 }
 
 a { color: #ff5252; text-decoration: none; }
-a :hover { text-decoration: underline; }
+a:hover { text-decoration: underline; }
 
 /* ─── NAVBAR ─── */
 .navbar {

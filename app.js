@@ -380,6 +380,12 @@ const server = http.createServer(async (req, res) => {
                     return json(res, 400, { error: 'Dates must be valid and not beyond 2080-12-31.' });
                 }
             }
+            if (tableName === 'income') {
+                const currency = sanitizeInput(fields.currency);
+                if (currency && !isSupportedCurrency(currency)) {
+                    return json(res, 400, { error: 'Invalid currency code.' });
+                }
+            }
             const placeholders = colNames.map(() => '?').join(', ');
             const values = colNames.map(c => sanitizeInput(fields[c]));
             db.prepare(`INSERT INTO ${tableName} (user_id, ${colNames.join(', ')}) VALUES (?, ${placeholders})`).run(user.id, ...values);
@@ -398,6 +404,12 @@ const server = http.createServer(async (req, res) => {
                 const renewalDate = sanitizeInput(fields.renewal_date);
                 if (!validateDateNB(startDate) || !validateDateNB(renewalDate)) {
                     return json(res, 400, { error: 'Dates must be valid and not beyond 2080-12-31.' });
+                }
+            }
+            if (tableName === 'income') {
+                const currency = sanitizeInput(fields.currency);
+                if (currency && !isSupportedCurrency(currency)) {
+                    return json(res, 400, { error: 'Invalid currency code.' });
                 }
             }
             const sets = colNames.map(c => `${c} = ?`).join(', ');
@@ -506,13 +518,11 @@ const server = http.createServer(async (req, res) => {
     const protectedPages = new Set([
         '/dashboard.html',
         '/income.html',
-        '/Income.html',
         '/assets.html',
         '/liabilities.html',
         '/protection.html',
         '/estate.html',
-        '/Intangibles.html',
-        '/intangibles.html'
+        '/Intangibles.html'
     ]);
 
     if (protectedPages.has(pathname)) {

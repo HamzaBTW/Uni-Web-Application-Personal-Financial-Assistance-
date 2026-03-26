@@ -126,8 +126,8 @@ async function saveIntangibles() {
 
     // Validate inputs
     const scores = sliderIds.map(id => parseInt(document.getElementById(id).value));
-    if (scores.some(score => score <= 0)) {
-        showModal('Please set all scores above 0 before saving.');
+    if (scores.some(score => Number.isNaN(score) || score < 0)) {
+        showModal('Please ensure all scores are valid.');
         return;
     }
 
@@ -302,7 +302,8 @@ function updateCharts() {
                     max: 10,
                     ticks: {
                         stepSize: 2,
-                        font: { color: '#bbb', size: 11 }
+                        color: '#bbb',
+                        font: { size: 11 }
                     },
                     grid: { color: '#444' },
                     angleLines: { color: '#444' }

@@ -147,6 +147,17 @@ let incomeEntries = [];
 let displayCurrency = 'USD'; // Current currency to display all values in
 
 /**
+ * Escape HTML special characters to prevent XSS attacks.
+ * @param {string} text - The text to escape.
+ * @returns {string} The escaped text safe for HTML insertion.
+ */
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+/**
  * Set the UI display currency and refresh dependent calculations, charts, and converter.
  * @param {string} currency - The target currency code (e.g., 'USD', 'EUR') to use for displaying amounts.
  */
@@ -273,7 +284,7 @@ async function removeIncome(id) {
         showModal('Income removed successfully!');
     } catch (error) {
         console.error('Failed to remove income:', error);
-        alert('Failed to remove income. Please try again.');
+        showModal('Failed to remove income. Please try again.');
     }
 }
 
@@ -347,7 +358,7 @@ function updateIncomeList() {
         return `
         <div class="income-item">
             <div class="income-item-info">
-                <div class="income-item-name">${entry.source_type || entry.description}</div>
+                <div class="income-item-name">${escapeHtml(entry.source_type || entry.description)}</div>
                 <div class="income-item-amount">${displayAmount}</div>
             </div>
             <div class="income-item-actions">
@@ -431,7 +442,7 @@ function updateTaxCalculations() {
         const rate = amt > 0 ? ((taxInOriginalCurrency / amt) * 100).toFixed(2) : '0';
         breakdownHTML += `
             <tr>
-                <td><strong>${entry.source_type || entry.description}</strong></td>
+                <td><strong>${escapeHtml(entry.source_type || entry.description)}</strong></td>
                 <td>${formatCurrency(amt, curr)}</td>
                 <td>${formatCurrency(amtDisplay, displayCurrency)}</td>
                 <td>${formatCurrency(taxDisplay, displayCurrency)}</td>
@@ -813,21 +824,27 @@ function updateTaxRateAnalysisChart(bySource) {
     const taxRates = [];
 
     labels.forEach(source => {
-        let sourceTaxInOriginalCurrency = 0;
-        let sourceAmountInOriginalCurrency = 0;
-        
+        let sourceTaxUsd = 0;
+        let sourceAmountUsd = 0;
+
         incomeEntries.forEach(entry => {
             if ((entry.source_type || entry.description || 'Other') === source) {
                 const amt = Number(entry.amount || 0);
                 const curr = entry.currency || 'USD';
-                sourceAmountInOriginalCurrency += amt;
-                
+                const rate = exchangeRates[curr] || 1;
+
+                // Convert amount to USD
+                const amtUsd = rate && rate !== 0 ? (amt / rate) : amt;
+                sourceAmountUsd += amtUsd;
+
+                // Calculate tax in original currency, then convert to USD
                 const taxInOriginalCurrency = calculateTax(amt, curr);
-                sourceTaxInOriginalCurrency += taxInOriginalCurrency;
+                const taxInUsd = rate && rate !== 0 ? (taxInOriginalCurrency / rate) : taxInOriginalCurrency;
+                sourceTaxUsd += taxInUsd;
             }
         });
-        
-        const rate = sourceAmountInOriginalCurrency > 0 ? (sourceTaxInOriginalCurrency / sourceAmountInOriginalCurrency) * 100 : 0;
+
+        const rate = sourceAmountUsd > 0 ? (sourceTaxUsd / sourceAmountUsd) * 100 : 0;
         taxRates.push(rate);
     });
 
