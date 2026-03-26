@@ -34,6 +34,12 @@ function getSessionId(req) {
     return cookies.sid || null;
 }
 
+/**
+ * Create a serialized cookie string for a session identifier.
+ * @param {string} sid - The session identifier to store in the cookie.
+ * @param {number} [maxAge=7200] - Lifetime of the cookie in seconds.
+ * @returns {string} The serialized cookie string for the `sid` cookie.
+ */
 function buildSessionCookie(sid, maxAge = 7200) {
     return cookie.serialize('sid', sid, {
         httpOnly: true,
@@ -45,13 +51,9 @@ function buildSessionCookie(sid, maxAge = 7200) {
 }
 
 /**
- * Provide a set of HTTP security headers for responses.
+ * Provide common HTTP security headers for responses.
  *
- * @returns {{[header: string]: string}} An object mapping header names to values:
- * - `X-Content-Type-Options`: prevents MIME type sniffing (`nosniff`).
- * - `X-Frame-Options`: disallows embedding in frames (`DENY`).
- * - `X-XSS-Protection`: enables basic XSS protection in legacy browsers (`1; mode=block`).
- * - `Content-Security-Policy`: restricts resource loading (self-only by default; allows scripts from https://cdn.jsdelivr.net, styles from https://fonts.googleapis.com and inline styles, fonts from https://fonts.gstatic.com, and images from self and data URIs).
+ * @returns {{[header: string]: string}} Mapping of header names to values; includes `X-Content-Type-Options`, `X-Frame-Options`, `X-XSS-Protection`, and a `Content-Security-Policy` that restricts script, style, image, and font sources.
  */
 function securityHeaders() {
     return {
