@@ -2,3 +2,8 @@
 /database.js           @HamzaBTW
 /database/schema.sql   @HamzaBTW
 /database/seed.sql     @HamzaBTW
+
+# Feature files — collaborator can add features directly
+/templates/            @HamzaBTW @rudramittal483
+/routes/               @HamzaBTW @rudramittal483
+/app.js                @HamzaBTW @rudramittal483
