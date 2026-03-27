@@ -151,6 +151,30 @@ let exchangeRateSource = 'fallback';
 let incomeEntries = [];
 let displayCurrency = 'USD'; // Current currency to display all values in
 
+function initMobileNav() {
+    const navToggle = document.getElementById('nav-toggle');
+    const navLinks = document.getElementById('nav-links');
+    const mobileNavBreakpoint = 860;
+
+    if (!navToggle || !navLinks) return;
+
+    navToggle.addEventListener('click', function () {
+        const isOpen = navLinks.classList.toggle('is-open');
+        navToggle.setAttribute('aria-expanded', String(isOpen));
+        navToggle.setAttribute('aria-label', isOpen ? 'Close navigation menu' : 'Open navigation menu');
+    });
+
+    navLinks.querySelectorAll('a').forEach(function (link) {
+        link.addEventListener('click', function () {
+            if (window.innerWidth <= mobileNavBreakpoint) {
+                navLinks.classList.remove('is-open');
+                navToggle.setAttribute('aria-expanded', 'false');
+                navToggle.setAttribute('aria-label', 'Open navigation menu');
+            }
+        });
+    });
+}
+
 /**
  * Escape HTML special characters to prevent XSS attacks.
  * @param {string} text - The text to escape.
@@ -1063,6 +1087,7 @@ function switchTab(tabName) {
 
 // Initialize
 document.addEventListener('DOMContentLoaded', async function() {
+    initMobileNav();
     const user = await requireUser();
 
     const addBtn = document.getElementById('addIncomeBtn');

@@ -15,6 +15,12 @@ body {
   background-size: auto, auto, 28px 28px;
 }
 
+html, body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
 a { color: #ff5252; text-decoration: none; }
 a:hover { text-decoration: underline; }
 
@@ -71,6 +77,9 @@ a:hover { text-decoration: underline; }
   align-items: center;
   gap: 20px;
   flex-wrap: wrap;
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
   justify-content: flex-end;
 }
 
@@ -96,6 +105,7 @@ a:hover { text-decoration: underline; }
   font-size: 1.75rem;
   font-weight: 800;
   margin-bottom: 32px;
+  overflow-wrap: anywhere;
   background: linear-gradient(120deg, #fff 30%, #ff6b6b 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -138,7 +148,7 @@ a:hover { text-decoration: underline; }
 }
 
 /* ─── RESPONSIVE ─── */
-@media (max-width: 600px) {
+@media (max-width: 860px) {
   .navbar {
     padding: 12px 16px;
     align-items: center;

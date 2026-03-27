@@ -65,6 +65,7 @@
 /* ─── TABLE ─── */
 #table-wrap {
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
 }
 
 .data-table { width: 100%; border-collapse: collapse; }
@@ -80,7 +81,9 @@
 
 /* ─── RESPONSIVE ─── */
 @media (max-width: 600px) {
+    .page-header { flex-wrap: wrap; gap: 12px; }
+    .page-header .btn { width: 100%; }
     .form-grid { grid-template-columns: 1fr; }
-    .data-table { font-size: 0.8rem; min-width: 640px; }
+    .data-table { font-size: 0.8rem; min-width: 620px; }
     .data-table th, .data-table td { padding: 10px 8px; }
 }

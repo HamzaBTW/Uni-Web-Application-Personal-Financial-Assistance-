@@ -36,6 +36,11 @@
 .form-actions { grid-column: 1 / -1; display: flex; gap: 12px; margin-top: 8px; }
 
 /* ─── TABLE ─── */
+#table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
 .data-table { width: 100%; border-collapse: collapse; }
 .data-table th { text-align: left; font-size: 0.75rem; font-weight: 600; color: #666; text-transform: uppercase;
     letter-spacing: 0.5px; padding: 12px 16px; border-bottom: 1px solid #2a2a2a; }
@@ -55,7 +60,10 @@
 
 /* ─── RESPONSIVE ─── */
 @media (max-width: 600px) {
+    .page-header { flex-wrap: wrap; gap: 12px; }
+    .page-header .btn { width: 100%; }
     .form-grid { grid-template-columns: 1fr; }
+    .data-table { min-width: 620px; }
     .data-table { font-size: 0.8rem; }
     .data-table th, .data-table td { padding: 10px 8px; }
 }

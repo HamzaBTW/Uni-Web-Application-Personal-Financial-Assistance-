@@ -1,6 +1,7 @@
 function initMobileNav() {
     const navToggle = document.getElementById('nav-toggle');
     const navLinks = document.getElementById('nav-links');
+    const mobileNavBreakpoint = 860;
 
     if (!navToggle || !navLinks) return;
 
@@ -12,7 +13,7 @@ function initMobileNav() {
 
     navLinks.querySelectorAll('a').forEach(function (link) {
         link.addEventListener('click', function () {
-            if (window.innerWidth <= 600) {
+            if (window.innerWidth <= mobileNavBreakpoint) {
                 navLinks.classList.remove('is-open');
                 navToggle.setAttribute('aria-expanded', 'false');
                 navToggle.setAttribute('aria-label', 'Open navigation menu');

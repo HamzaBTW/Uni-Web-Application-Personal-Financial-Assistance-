@@ -17,6 +17,12 @@ body {
   background-size: auto, auto, 28px 28px;
 }
 
+html, body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
 a { color: #ff5252; text-decoration: none; }
 a:hover { text-decoration: underline; }
 
@@ -42,10 +48,41 @@ a:hover { text-decoration: underline; }
   text-decoration: none;
 }
 
+.nav-toggle {
+  display: none;
+  width: 42px;
+  height: 42px;
+  border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 10px;
+  background: rgba(26,26,26,0.9);
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  flex-direction: column;
+}
+
+.nav-toggle span {
+  width: 18px;
+  height: 2px;
+  background: #e0e0e0;
+  border-radius: 2px;
+}
+
+.nav-toggle:focus-visible {
+  outline: 2px solid #ff5252;
+  outline-offset: 2px;
+}
+
 .navbar #nav-links {
   display: flex;
   align-items: center;
   gap: 20px;
+  flex-wrap: wrap;
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  justify-content: flex-end;
 }
 
 .navbar #nav-links a {
@@ -496,6 +533,17 @@ input:focus, select:focus {
   margin-top: 20px;
 }
 
+#taxBreakdown,
+#conversionResult {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+#taxBreakdown .conversion-table,
+#conversionResult .conversion-table {
+  min-width: 560px;
+}
+
 .conversion-table th {
   background: #1a1a1a;
   padding: 12px;
@@ -618,4 +666,52 @@ input:focus, select:focus {
   padding: 10px 20px;
   border-radius: 8px;
   cursor: pointer;
+}
+
+@media (max-width: 860px) {
+  .navbar {
+    padding: 12px 16px;
+    align-items: center;
+    gap: 10px;
+  }
+  .navbar .brand { font-size: 1rem; }
+  .nav-toggle {
+    display: inline-flex;
+    margin-left: auto;
+    position: relative;
+    z-index: 90;
+  }
+
+  .navbar #nav-links {
+    position: fixed;
+    top: 0;
+    right: 0;
+    height: 100vh;
+    width: min(78vw, 320px);
+    background: rgba(16,16,16,0.98);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-left: 1px solid rgba(255,255,255,0.08);
+    padding: 76px 16px 18px;
+    gap: 12px;
+    justify-content: flex-start;
+    flex-direction: column;
+    align-items: stretch;
+    transform: translateX(100%);
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.28s ease, opacity 0.28s ease;
+    z-index: 80;
+  }
+  .navbar #nav-links.is-open {
+    transform: translateX(0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .navbar #nav-links a {
+    font-size: 0.85rem;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.03);
+  }
 }

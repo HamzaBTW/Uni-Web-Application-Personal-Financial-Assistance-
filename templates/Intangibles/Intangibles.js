@@ -10,6 +10,30 @@ let radarChartInstance = null;
 let intangiblesData = {};
 let existingIntangibles = {};
 
+function initMobileNav() {
+    const navToggle = document.getElementById('nav-toggle');
+    const navLinks = document.getElementById('nav-links');
+    const mobileNavBreakpoint = 860;
+
+    if (!navToggle || !navLinks) return;
+
+    navToggle.addEventListener('click', function () {
+        const isOpen = navLinks.classList.toggle('is-open');
+        navToggle.setAttribute('aria-expanded', String(isOpen));
+        navToggle.setAttribute('aria-label', isOpen ? 'Close navigation menu' : 'Open navigation menu');
+    });
+
+    navLinks.querySelectorAll('a').forEach(function (link) {
+        link.addEventListener('click', function () {
+            if (window.innerWidth <= mobileNavBreakpoint) {
+                navLinks.classList.remove('is-open');
+                navToggle.setAttribute('aria-expanded', 'false');
+                navToggle.setAttribute('aria-label', 'Open navigation menu');
+            }
+        });
+    });
+}
+
 /**
  * Ensure the current user is authenticated, update the UI with their name and show navigation.
  *
@@ -357,6 +381,7 @@ function switchTab(tabName) {
 // Initialize
 document.addEventListener('DOMContentLoaded', async function() {
     try {
+        initMobileNav();
         const user = await requireUser();
         if (!user) return;
 
