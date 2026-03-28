@@ -86,9 +86,11 @@ function initMobileNav() {
                 <td>${statusBadge(r.status)}</td>
                 <td>${esc(r.details)}</td>
                 <td>${esc(r.contact_info)}</td>
-                <td class="actions">
-                    <button class="btn btn-sm btn-ghost edit-btn">Edit</button>
-                    <button class="btn btn-sm btn-danger del-btn">Delete</button>
+                <td>
+                    <div class="actions">
+                        <button class="btn btn-sm btn-ghost edit-btn">Edit</button>
+                        <button class="btn btn-sm btn-danger del-btn">Delete</button>
+                    </div>
                 </td>`;
             tr.querySelector('.edit-btn').addEventListener('click', () => openForm(r));
             tr.querySelector('.del-btn').addEventListener('click', async () => {

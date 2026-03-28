@@ -44,9 +44,10 @@
 .data-table { width: 100%; border-collapse: collapse; }
 .data-table th { text-align: left; font-size: 0.75rem; font-weight: 600; color: #666; text-transform: uppercase;
     letter-spacing: 0.5px; padding: 12px 16px; border-bottom: 1px solid #2a2a2a; }
-.data-table td { padding: 14px 16px; border-bottom: 1px solid #1e1e1e; color: #ccc; font-size: 0.9rem; }
+.data-table td { padding: 14px 16px; border-bottom: 1px solid #1e1e1e; color: #ccc; font-size: 0.9rem; vertical-align: top; }
 .data-table tr:hover td { background: rgba(255,82,82,0.04); }
-.actions { display: flex; gap: 8px; }
+.data-table td:last-child { vertical-align: top; }
+.data-table td:last-child .actions { display: inline-flex; gap: 8px; align-items: flex-start; justify-content: flex-start; }
 
 /* ─── STATUS BADGES ─── */
 .status-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
